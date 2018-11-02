@@ -1,133 +1,167 @@
-import sys
+# -*- coding: utf-8 -*-
+"""
+Created on May 29th, 8:57
+SARSA(lambda) simple implementation
+@author: Felipe Leno
+"""
+
 import random
 
-from .agent import Agent
 
-#from cmac import CMAC
+from agents.agent import Agent
+from agents.tilemanager import TileManager,TileCoding
+from agents.common_features import Agent_Utilities
+
+
+
 
 class SARSA(Agent):
+    
+    #Class to control tiles
+    tileManager = None
+    #Variable for eligibility trace
+    stateActionTrace = None
+    alpha = None
+    originalAlpha = None
 
-    def __str__(self):
-        """ Overwrites the object.__str__ method.
+    
+    epsilon = None
+    decayRate = None
+    
+    functions = None
+    policy = None
+    
+    qTable = None
+    
+    initQ = None #Value to initiate Q-table
+    foundState = {}
+    
+    #Backup saved experiments
+    #def __init__(self, seed=12345,alpha=0.7,epsilon=0.1,initQ = 0, decayRate = 0.92):
+    def __init__(self, seed=12345, alpha=0.1, epsilon=0.1, initQ=0, decayRate=0.9):
 
-        Returns:
-            string (str): Important parameters of the object.
-        """
-        return "Agent: " + str(self.unum) + ", " + \
-               "Type: " + str(self.name) + ", " + \
-               "Training steps: " + str(self.training_steps_total) + ", " + \
-               "Q-Table size: " + str(len(self.qTable))
-
-    def __init__(self, epsilon=0.1, alpha=0.1, gamma=0.9, decayRate=0.9, seed=12345,
-                 cmac_level=20, cmac_quantization=0.3, cmac_beta=0.1, port=12345,serverPath = "../HFO/bin/"):
-        super(SARSA, self).__init__(seed, port,serverPath=serverPath)
-        self.name = "SARSA"
+        self.functions = Agent_Utilities()
+        self.originalAlpha = alpha
+        self.alpha = self.originalAlpha
+        self.epsilon = epsilon
         self.qTable = {}
         self.stateActionTrace = {}
-        self.epsilon = epsilon
-        self.alpha = alpha
-        self.gamma = gamma
         self.decayRate = decayRate
-	#the cmac attribute is assigned at SARSATile
-        #self.cmac = CMAC(cmac_level,cmac_quantization,cmac_beta) 
-        #print('***** %s: Agent uses CMAC(%s,%s,%s)' % (str(self.unum),str(cmac_level), str(cmac_quantization), str(cmac_beta)))
+        self.initQ = initQ
+        #self.tileManager = TileManager()
+        self.tileManager = TileManager()
+        super(SARSA, self).__init__(seed=seed)
+        
+        
+             
+        
 
-    def quantize_features(self, features):
-        """ CMAC utilities for all agent """
-        quantVar = self.cmac.quantize(features)        
-  #      data = []
-        data = quantVar
-        #len(quantVar[0]) is the number of variables
-#        for i in range(0,len(quantVar[0])):
-            #Transforms n tuples into a single array
-#            for var in quantVar:
-                #copy each tuple value to the output
-#                data.append(var[i])
-        #returns the output as a tuple
-        return tuple(data)
-
-    def advise_action(self,uNum,state):
-        """Verifies if the agent can advice a friend, and return the action if possible"""
-        return None #No advising
-
-    def get_Q(self, state, action):
-        return self.qTable.get((state, action), 0.0)
-
-    def observe_reward(self,state,action,reward,statePrime):
-        """ After executing an action, the agent is informed about the state-reward-state tuple """
-        pass
-
-
-    def select_action(self, stateFeatures, state, noAdvice=False):
-        """Executes the epsilon-greedy exploration strategy"""
-        #stores last CMAC result
-        #self.lastState = state
-        # select applicable actions
-        if stateFeatures[5] == 1: # State[5] is 1 when the player can kick the ball
-            actions = [self.SHOOT, self.DRIBBLE, self.PASSfar, self.PASSnear]
+            
+    
+    def select_action(self, state,allowExploration=True):
+        """ When this method is called, the agent executes an action based on its Q-table
+            The allowExploration can be turned of to select one action without risk of getting
+            a random action.
+        """
+        
+        state = self.tileManager.get_tiles(state)
+        
+        #if state not in self.foundState:
+        #    print ("NEW")
+        #self.foundState[state] = 1
+        
+        #If exploring, an exploration strategy is executed
+        if self.exploring and allowExploration:
+            action =  self.exp_strategy(state)
+        #Else the best action is selected
         else:
-            return self.MOVE
-        # epsilon greedy action selection
-        if self.exploring and random.random() < self.epsilon and not noAdvice:
-            actionsRandom = [ self.SHOOT,self.DRIBBLE, self.DRIBBLE, self.SHOOT, self.PASSfar, self.PASSnear]
-            return random.choice(actionsRandom)
-        else:
-            cmacState = self.quantize_features(state)
-            qValues = [self.get_Q(cmacState, action) for action in actions]
-            maxQ = max(qValues)
-            count = qValues.count(maxQ)
-            if count > 1: #and self.exploring:
-                best = [i for i in range(len(actions)) if qValues[i] == maxQ]
-                if not self.exploring:
-                    return actions[best[0]]
-                return actions[random.choice(best)]
-            else:
-                return actions[qValues.index(maxQ)]
+            #action =  self.exp_strategy(state)
+            action = self.policy_check(state)
+        
+        return action
 
+        
+        
+    def policy_check(self,state):
+        """In case a fixed action is included in the policy cache, that action is returned
+        else, the maxQ action is returned"""
+        return self.max_Q_action(state,forExploration=False)
+        
+        
+    def max_Q_action(self,state,forExploration):
+        """Returns the action that corresponds to the highest Q-value"""
+        actions = self.environment.all_actions(forExploration=forExploration)#,agentIndex=self.agentIndex)
+        #if len(actions)==1:
+            #return actions[0]
+        v,a =  self.functions.get_max_Q_value_action(self.qTable,state,actions,self.exploring,self)
+        return a
+    def get_max_Q_value(self,state,forExploration):
+        """Returns the maximum Q value for a state"""
+        actions = self.environment.all_actions(forExploration=forExploration)#,agentIndex=self.agentIndex)
+        #if len(actions)==1:
+        #    return self.readQTable(state,actions[0])
+        v,a =  self.functions.get_max_Q_value_action(self.qTable,state,actions,self.exploring,self)
+        return v
+        
+        
+        
+    def exp_strategy(self,state):
+        """Returns the result of the exploration strategy"""
+        prob = random.random()
+        if prob <= self.epsilon:
+            allActions = self.environment.all_actions(forExploration=True)#,agentIndex=self.agentIndex)
+            return random.choice(allActions)
+        return self.max_Q_action(state,forExploration=True)
+           
 
-    def learn(self, state1, action1, reward, state2, action2):
-        qnext = self.get_Q(state2, action2)
-        self.learn_Q(state1, action1, reward, reward + self.gamma * qnext)
-
-    def learn_Q(self, state, action, reward, value):
-        oldv = self.qTable.get((state, action), None)
-        if oldv is None:
-            self.qTable[(state, action)] = reward
-        else:
-            self.qTable[(state, action)] = oldv + self.alpha * (value - oldv)
-
-    def step(self, state, action):
-        """ Perform a complete training step """
-        # perform action and observe reward & statePrime
-        self.execute_action(action)
-        status = self.hfo.step()
-        stateFeatures = self.hfo.getState()
-        statePrime = self.get_transformed_features(stateFeatures)
-        stateQuantized = self.quantize_features(state)
-        statePrimeQuantized = self.quantize_features(statePrime)
-        reward = self.get_reward(status)
-        # select actionPrime
+    
+    def get_Q_size(self):
+        """Returns the size of the QTable"""
+        return len(self.qTable)
+        
+    
+    def observe_reward(self,state,action,statePrime,reward):
+        """Performs the standard Q-Learning Update"""
         if self.exploring:
-            actionPrime = self.select_action(stateFeatures, statePrime,False)
-        else:
-            actionPrime = self.select_action(stateFeatures, statePrime,True)
+            state = self.tileManager.get_tiles(state)
+            statePrimeTiled = self.tileManager.get_tiles(statePrime)
+            #statePrime = self.tileManager.get_tiles(statePrime)
+            qValue= self.readQTable(state,action)
+            #Checks if a random action was chosen, in this case the stateAction trace
+            # is erased (does not make sense anymore)
+            #if self.lastChosenAction != action:
+            #    self.stateActionTrace = {}
+            #Choose the next action without exploration
+            lastChosenAction = self.select_action(statePrime,allowExploration = False)
+            tdError = reward + self.gamma * self.readQTable(statePrimeTiled,lastChosenAction) - qValue
+            #Updates trace
+            self.stateActionTrace[(state,action)] = self.stateActionTrace.get((state,action),0) + 1
+            #Updates all state-action pairs in the trace
+            for stateAction in self.stateActionTrace.keys():
+                newQ = self.qTable.get(stateAction,0) + self.alpha * tdError * self.stateActionTrace[stateAction]
+                #Decays the trace
+                self.stateActionTrace[stateAction] = self.stateActionTrace[stateAction] * self.gamma * self.decayRate
+                self.qTable[stateAction] = newQ
+            if self.alpha > 0.1:
+                self.alpha -= 0.001
+        
 
-        if self.exploring:
-            # calculate TDError
-            TDError = reward + self.gamma * self.get_Q(statePrimeQuantized, actionPrime) - self.get_Q(stateQuantized, action)
-            # update trace value
-            self.stateActionTrace[(stateQuantized, action)] = self.stateActionTrace.get((stateQuantized, action), 0) + 1
-            for stateAction in self.stateActionTrace:
-                # update update ALL Q values and eligibility trace values
-                self.qTable[stateAction] = self.qTable.get(stateAction, 0) + TDError * self.alpha * self.stateActionTrace.get(stateAction, 0)
-                # update eligibility trace Function for state and action
-                self.stateActionTrace[stateAction] = self.gamma * self.decayRate * self.stateActionTrace.get(stateAction, 0)
-            #self.learn(stateQuantized, action, reward,
-            #           statePrimeQuantized, actionPrime)
-            self.training_steps_total += 1
-        if status != self.IN_GAME:
-            self.stateActionTrace = {}
-        return status, statePrime, actionPrime
-    def setupAdvising(self,agentIndex,allAgents):
-        """ This method is called in preparation for advising """
-        pass
+    def readQTable(self,state,action):             
+        """Returns one value from the Qtable"""
+        if not (state,action) in self.qTable:
+            self.qTable[(state,action)] = self.initQ
+        
+        return self.qTable[(state,action)] 
+        
+    def finish_episode(self):
+        """Initiates the trace"""
+        super(SARSA, self).finish_episode()
+        self.stateActionTrace = {}
+
+    def finish_learning(self):
+        """Initiates the alpha for new task"""
+        super(SARSA, self).finish_learning()
+        self.alpha = self.originalAlpha
+
+
+ 
