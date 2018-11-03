@@ -12,9 +12,10 @@ import sys
 import os
 import csv
 import random, itertools
-from hfo import *
+import hfo
 from threading import Thread
 from time import sleep
+from environment.hfoenvironment import HFOEnvironment
 #from cmac import CMAC
 
 
@@ -40,11 +41,11 @@ def get_args():
     parser.add_argument('-a9','--agent9',  default='Dummy')
     parser.add_argument('-a10','--agent10',default='Dummy')
     parser.add_argument('-a11','--agent11',default='Dummy')
-    parser.add_argument('-t','--learning_trials',type=int, default=10)
-    parser.add_argument('-i','--evaluation_interval',type=int, default=5)
-    parser.add_argument('-d','--evaluation_duration',type=int, default=5)
+    parser.add_argument('-t','--learning_trials',type=int, default=5000)
+    parser.add_argument('-i','--evaluation_interval',type=int, default=20)
+    parser.add_argument('-d','--evaluation_duration',type=int, default=100)
     parser.add_argument('-s','--seed',type=int, default=12345)
-    parser.add_argument('-l','--log_file',default='../log/')
+    parser.add_argument('-l','--log_file',default='./log/')
     parser.add_argument('-p','--port',type=int, default=12345)
     parser.add_argument('-r','--number_trial',type=int, default=1)
     parser.add_argument('-e','--server_path',  default='../../HFO/bin/')
@@ -71,7 +72,7 @@ def build_agents():
            sys.exit(1)
     
         print("Creating agent")
-        AGENT = AgentClass(seed=parameter.seed, port=parameter.port, serverPath = parameter.server_path)
+        AGENT = AgentClass(seed=parameter.seed)
         print("OK Agent")
         agents.append(AGENT)
         
@@ -141,7 +142,7 @@ def thread_agent(agentObj,allAgents,agentIndex,environment,mainParameters):
     #train_csv_file.flush()
     #print('***** %s: Setting up eval log files' % str(agentObj.unum))
     #eval_csv_file = open(parameter.log_file + "_" + str(AGENT.unum) + "_eval", "wb")
-    eval_csv_file = open(logFolder + "_eval", "wb")
+    eval_csv_file = open(logFolder + "_eval", "w")
     eval_csv_writer = csv.writer(eval_csv_file)
     eval_csv_writer.writerow(("trial","goal_percentage","avg_goal_time","used_budget","disc_reward"))
     eval_csv_file.flush()
@@ -150,7 +151,7 @@ def thread_agent(agentObj,allAgents,agentIndex,environment,mainParameters):
     #agentObj.setupAdvising(agentIndex,allAgents)
     gamma=agentObj.gamma
 
-    print('***** %s: Start training' % str(agentObj.unum))
+    #print('***** %s: Start training' % str(agentObj.unum))
     for trial in range(0,mainParameters.learning_trials+1):
         # perform an evaluation trial
         if(trial % mainParameters.evaluation_interval == 0):
@@ -165,9 +166,9 @@ def thread_agent(agentObj,allAgents,agentIndex,environment,mainParameters):
                                 
                 while not environment.is_terminal_state():
                     eval_frame += 1
-                    state = environment.getState(agentIndex)
+                    state = environment.get_state(agentIndex)
                     #action = AGENT.select_action(tuple(stateFeatures), state)
-                    action = agentObj.select_action(state, False)
+                    action = agentObj.select_action(state)
                     environment.act(action,agentIndex)
                     statePrime,action,reward = environment.step(agentIndex)
                     eval_status = environment.lastStatus
@@ -189,7 +190,8 @@ def thread_agent(agentObj,allAgents,agentIndex,environment,mainParameters):
             eval_csv_file.flush()
             agentObj.set_exploring(True)
             # reset agent trace
-            agentObj.finish_episode() 
+            agentObj.finish_episode()
+            environment.start_episode() 
            
         
         #print('***** %s: Starting Learning Trial %d' % (str(AGENT.unum),trial))
@@ -199,13 +201,14 @@ def thread_agent(agentObj,allAgents,agentIndex,environment,mainParameters):
         #print "Selected action --- "+str(action)
         while not environment.is_terminal_state():
             frame += 1
-            state = environment.getState(agentIndex)
+            state = environment.get_state(agentIndex)
             #print('***** %s: state type: %s, len: %s' % (str(AGENT.unum), str(type(state)), str(len(state))))
             #action = AGENT.select_action(tuple(stateFeatures), state)
-            action = agentObj.select_action(state, False)
+            action = agentObj.select_action(state)
             environment.act(action,agentIndex)
             statePrime,action,reward = environment.step(agentIndex)
             agentObj.observe_reward(state, action, statePrime,reward)
+        environment.start_episode()
         #print('***** %s: Trial ended with %s'% (str(AGENT.unum), AGENT.hfo.statusToString(status)))
         #print('***** %s: Agent --> %s'% (str(AGENT.unum), str(AGENT)))
        
@@ -216,7 +219,7 @@ def thread_agent(agentObj,allAgents,agentIndex,environment,mainParameters):
 
 
 
-    print('***** %s: Agent --> %s'% (str(agentObj.unum), str(agentObj)))
+    #print('***** %s: Agent --> %s'% (str(agentObj.unum), str(agentObj)))
     eval_csv_file.close()
     #train_csv_writer.writerow(("-","-",str(agentObj)))
     #train_csv_file.flush()

@@ -3,9 +3,9 @@ Environment Class for preparing HFO experiments
 @author: Felipe Leno
 """
 import subprocess
-import hfoactions
+import environment.hfoactions as hfoactions
 
-from hfostate import HFOStateManager
+from environment.hfostate import HFOStateManager
 
 import hfo
 
@@ -33,8 +33,8 @@ class HFOEnvironment(object):
     numberOpponents = None
     #Utilities for state space variables
     stateSpaceManager = None
-    #Last applied action
-    lastAction = None
+    #Last applied actions
+    lastActions = None
     #Terminate Server thread?
     terminateThread = None
     #Action and parameter  to be sent to HFO server
@@ -60,6 +60,7 @@ class HFOEnvironment(object):
         """
         
         self.serverPort = port
+        self.lastStatus = hfo.IN_GAME
         
         self.numberLearning = numberLearning
         self.numberFriends = numberLearning-1 + cooperative
@@ -83,7 +84,10 @@ class HFOEnvironment(object):
         
         #Initiates a new thread only to avoid an error when loading the strategy.cpp file
         self.terminateThread = False
-        t = Thread(target=init_server, args=(self,taskParam,limitFrames,numberLearning))
+        seed = 1
+        t = Thread(target=init_server, args=(self,numberLearning,
+                    cooperative,numberOpponents,port,
+                    limitFrames,seed))
         t.start()
         t.join()
         
@@ -91,14 +95,14 @@ class HFOEnvironment(object):
 
 
         #Initiates one thread for each agent controlled by learning algorithms
-        #for i in range(self.agentsControl):
-            #t = Thread(target=connect_server, args=(self, i))
-            #t.start()
-            #time.sleep(2)
-        t = Thread(target=connect_server, args=(self,))
-        t.start()
+        for i in range(self.numberLearning):
+            t = Thread(target=connect_server, args=(self, i))
+            t.start()
+            time.sleep(2)
+        #t = Thread(target=connect_server, args=(self,))
+        #t.start()
         #The connection with the server is OK after here.
-        time.sleep(3)
+        #time.sleep(3)
         self.totalEpisodes = 0
         self.goals = 0
         
@@ -124,7 +128,8 @@ class HFOEnvironment(object):
         self.clean_connections()
         
 
-    
+    def get_state(self,agentIndex=0):
+        return self.hfoObj[agentIndex].getState()
     def all_actions(self,agentIndex=0,forExploration=False):
         """Returns the set of applicable actions for the agent
            in case the agent has the ball, a PASS for each friend, DRIBBLE and SHOOT
@@ -139,11 +144,11 @@ class HFOEnvironment(object):
     def act(self,action,agentIndex=0):
         """Performs the agent action"""
         #Transforms the action in the agent's point of view to the correct HFO server format
-        self.lastAction[agentIndex] = action
+        self.lastActions[agentIndex] = action
         self.applyAction[agentIndex], self.actionParameter[agentIndex] = self.translate_action(action, self.hfoObj[agentIndex].getState())
         #self.applyAction, self.actionParameter = self.translate_action(action, self.hfoObj.getState())
         #Wait for another thread
-        while not self.applyAction is None:
+        while not self.applyAction[agentIndex] is None:
             pass
 
         
@@ -213,7 +218,7 @@ class HFOEnvironment(object):
         #reward = [self.observe_reward()]*self.numberLearning
         #return (statePrime,action,reward)
         statePrime = self.get_state(agentIndex)
-        action = self.lastAction[agentIndex]
+        action = self.lastActions[agentIndex]
         reward = self.observe_reward()
         return (statePrime,action,reward)
         
