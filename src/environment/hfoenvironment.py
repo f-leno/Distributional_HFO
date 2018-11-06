@@ -106,7 +106,7 @@ class HFOEnvironment(object):
         self.totalEpisodes = 0
         self.goals = 0
         
-        self.stateSpaceManager = HFOStateManager(numberLearning+cooperative,self.numberOpponents)
+        self.stateSpaceManager = HFOStateManager(numberLearning-1+cooperative,self.numberOpponents)
  
         
     def clean_connections(self):
@@ -279,6 +279,9 @@ class HFOEnvironment(object):
         """Executes the state transition""" 
         pass
     
+    def get_unum(self,agentIndex=0):
+        return self.hfoObj[agentIndex].getUnum()
+    
 """class ClientConnection():
     hfoObj = None
     main = None
@@ -359,14 +362,14 @@ def connect_server(self,agentIndex):
             
             
         
-def init_server(self,numberLearning,cooperative,numberOpponents,port,limitFrames,seed=None):
+def init_server(self,numberLearning,cooperative,numberOpponents,port,limitFrames,seed=None,ballInOffense=True):
         """Initiates the server process.             
         """
         
        
         #Build all commands correspondent to parameters
         #agentsParam = " --offense-agents 1 --offense-npcs "+str(numberFriends)
-        agentsParam = " --offense-agents "+str(numberLearning)+" --offense-npcs " + str(numberOpponents)
+        agentsParam = " --offense-agents "+str(numberLearning)+" --offense-npcs " + str(cooperative)
         opponentsParam = " --defense-npcs "+str(numberOpponents)
         #opStrategy = " --offense-team base --defense-team " + opStrategy
         #initDist = " --ball-x-min "+str(xMin) + " --ball-x-max "+str(xMax)
@@ -375,6 +378,9 @@ def init_server(self,numberLearning,cooperative,numberOpponents,port,limitFrames
         else:
             seedParam = " --seed "+str(seed)
         framesParam = " --frames-per-trial "+ str(limitFrames)
+        
+        
+            
               
         
 
@@ -383,6 +389,9 @@ def init_server(self,numberLearning,cooperative,numberOpponents,port,limitFrames
         serverCommand = self.serverPath + "HFO --fullstate" \
                                           " --no-logging --headless " + \
              "--port " +str(self.serverPort)
+        if ballInOffense:
+            #Ball starts with a random attacking agent
+            serverCommand += " --offense-on-ball 12"
                          
         #Joining all the commands
         serverCommand += framesParam + agentsParam + opponentsParam + seedParam + " --verbose >> testlog.log"
@@ -390,7 +399,9 @@ def init_server(self,numberLearning,cooperative,numberOpponents,port,limitFrames
         
         #Starting the server
         self.serverProcess = subprocess.Popen(serverCommand, shell=True)
+        
         time.sleep(3)
+        
 
         #self.clientProcess = []
         #for i in range(numberNpcs):

@@ -49,6 +49,6 @@ def all_actions(numberFriends, withBall, forExploration=False):
         else:
             actions = [hfo.SHOOT,hfo.DRIBBLE]
     else:
-        actions = [hfo.MOVE]
+        actions = [hfo.MOVE,hfo.NOOP]
         
     return actions

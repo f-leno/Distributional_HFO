@@ -44,9 +44,10 @@ class HFOStateManager(object):
                   self.OPP1_Y,self.OPP2_Y,self.OPP3_Y,self.OPP4_Y,self.OPP5_Y,
                   self.OPP1_NUMBER,self.OPP2_NUMBER,self.OPP3_NUMBER,self.OPP4_NUMBER,self.OPP5_NUMBER,
                   self.LAST_ACTION_SUCESS,
+                  self.STAMINA
                  ]
         #Sorts friends by distance
-        self.reorderFeatures(stateFeatures)
+        #self.reorderFeatures(stateFeatures)
         
         #Remove from the list attributes that do not exist - COmmented for new implementation
         remove = [x for x in remove if x is not None]
@@ -364,6 +365,7 @@ class HFOStateManager(object):
     
     #Chance of the last action being sucessfull
     LAST_ACTION_SUCESS = None
+    STAMINA = None
     
     
     
@@ -376,47 +378,29 @@ class HFOStateManager(object):
            nextUse += 1
        #Variables related to friends
        
-       #Goal Oppening
+       #Goal Oppening,Proximity to opponent and Opening
        if self.numberFriends > 0:
            self.FRIEND1_GOAL_OPENING = nextUse
-           nextUse += 1
+           self.FRIEND1_OPP_PROXIMITY = nextUse + 1
+           self.FRIEND1_PASS_OPENING = nextUse + 2
+           nextUse += 3
        if self.numberFriends > 1:
            self.FRIEND2_GOAL_OPENING = nextUse
-           nextUse += 1
+           self.FRIEND2_OPP_PROXIMITY = nextUse + 1
+           self.FRIEND2_PASS_OPENING = nextUse + 2
+           nextUse += 3
        if self.numberFriends > 2:
            self.FRIEND3_GOAL_OPENING = nextUse
-           nextUse += 1
+           self.FRIEND3_OPP_PROXIMITY = nextUse + 1
+           self.FRIEND3_PASS_OPENING = nextUse + 2
+           nextUse += 3
        if self.numberFriends > 3:
            self.FRIEND4_GOAL_OPENING = nextUse
-           nextUse += 1           
+           self.FRIEND4_OPP_PROXIMITY = nextUse + 1
+           self.FRIEND4_PASS_OPENING = nextUse + 2
+           nextUse += 3
            
-       #Proximity to opponent
-       if self.numberFriends > 0:
-           self.FRIEND1_OPP_PROXIMITY = nextUse
-           nextUse += 1
-       if self.numberFriends > 1:
-           self.FRIEND2_OPP_PROXIMITY = nextUse
-           nextUse += 1
-       if self.numberFriends > 2:
-           self.FRIEND3_OPP_PROXIMITY = nextUse
-           nextUse += 1
-       if self.numberFriends > 3:
-           self.FRIEND4_OPP_PROXIMITY = nextUse
-           nextUse += 1  
-           
-       #Opening
-       if self.numberFriends > 0:
-           self.FRIEND1_PASS_OPENING = nextUse
-           nextUse += 1
-       if self.numberFriends > 1:
-           self.FRIEND2_PASS_OPENING = nextUse
-           nextUse += 1
-       if self.numberFriends > 2:
-           self.FRIEND3_PASS_OPENING = nextUse
-           nextUse += 1
-       if self.numberFriends > 3:
-           self.FRIEND4_PASS_OPENING = nextUse
-           nextUse += 1  
+      
         
        #X,Y, and UNUM of friends
        if self.numberFriends > 0:
@@ -470,3 +454,4 @@ class HFOStateManager(object):
            nextUse += 3
            
        self.LAST_ACTION_SUCESS = nextUse
+       self.STAMINA = nextUse + 1
