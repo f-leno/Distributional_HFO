@@ -137,6 +137,7 @@ class HFOEnvironment(object):
         """
         fullState = self.hfoObj[agentIndex].getState()
         #fullState = self.hfoObj.getState()
+        print(fullState[self.stateSpaceManager.ABLE_KICK])
         withBall = fullState[self.stateSpaceManager.ABLE_KICK] == 1.0
                 
         return hfoactions.all_actions(self.numberFriends, withBall, forExploration)  

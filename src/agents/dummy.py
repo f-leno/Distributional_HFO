@@ -20,3 +20,4 @@ class Dummy(Agent):
         pass  
     def get_used_budget(self):
         return 0
+    
