@@ -71,9 +71,9 @@ class HFOEnvironment(object):
 
         #self.agentsControl = agentsControl
         self.lastActions = [None]*numberLearning
-        self.hfoObj = []
-        for i in range(numberLearning):
-            self.hfoObj.append(hfo.HFOEnvironment())
+        self.hfoObj = [None]*numberLearning
+        #for i in range(numberLearning):
+        #    self.hfoObj.append(hfo.HFOEnvironment())
         #self.hfoObj = hfo.HFOEnvironment()
 
         
@@ -83,20 +83,12 @@ class HFOEnvironment(object):
         
         
         #Initiates a new thread only to avoid an error when loading the strategy.cpp file
-        self.terminateThread = False
-        seed = 1
-        t = Thread(target=init_server, args=(self,numberLearning,
-                    cooperative,numberOpponents,port,
-                    limitFrames,seed))
-        t.start()
-        t.join()
-        
-        time.sleep(2)
+
 
 
         #Initiates one thread for each agent controlled by learning algorithms
-        for i in range(self.numberLearning):
-            t = Thread(target=connect_server, args=(self, i))
+        #for i in range(self.numberLearning):
+        #    t = Thread(target=connect_server, args=(self, i))
             #t.start()
             #time.sleep(2)
         #t = Thread(target=connect_server, args=(self,))
@@ -109,28 +101,30 @@ class HFOEnvironment(object):
         self.stateSpaceManager = HFOStateManager(numberLearning-1+cooperative,self.numberOpponents)
  
         
-    def clean_connections(self):
+    def clean_connections(self,serverProcess):
         """Cleans all the initiated services and files"""
-        self.clearServer = [True]*self.numberLearning
+        #self.clearServer = [True]*self.numberLearning
         #Wait until another thread finishes the HFO client
-        while True in self.clearServer:
-            pass
+        #while True in self.clearServer:
+        #    pass
         
         #Kill the HFO server
-        subprocess.call("kill -9 -"+str(self.serverProcess.pid), shell=True)
-        for proc in self.clientProcess:
-            subprocess.call("kill -9 -" + str(proc.pid), shell=True)
+        #subprocess.call("kill -9 -"+str(self.serverProcess.pid), shell=True)
+        #for proc in self.clientProcess:
+        #    subprocess.call("kill -9 -" + str(proc.pid), shell=True)
+        subprocess.call("kill -9 -"+str(serverProcess.pid), shell=True)
 
         time.sleep(2)
         #portmanager.release_port(self.serverPort)
         
     def finish_learning(self):
-        self.clean_connections()
+        pass
+        #self.clean_connections(serverProcess)
         
 
     def get_state(self,agentIndex=0):
         return self.hfoObj[agentIndex].getState()
-    def all_actions(self,agentIndex=0,forExploration=False):
+    def all_actions(self,agentIndex,forExploration=False):
         """Returns the set of applicable actions for the agent
            in case the agent has the ball, a PASS for each friend, DRIBBLE and SHOOT
            are applicable. Otherwise, only MOVE is applicable
@@ -311,7 +305,7 @@ class HFOEnvironment(object):
         """
         #Path with formations file
         connectPath = self.serverPath+'teams/base/config/formations-dt'
-        
+        self.hfoObj[agentIndex] = hfo.HFOEnvironment()
         #Connecting in the server
         serverResponse = self.hfoObj[agentIndex].connectToServer(
                 feature_set= hfo.HIGH_LEVEL_FEATURE_SET,
@@ -417,7 +411,7 @@ def connect_server(self,agentIndex):
             
             
         
-def init_server(self,numberLearning,cooperative,numberOpponents,port,limitFrames,seed=None,ballInOffense=True):
+def init_server(serverPath,serverPort,numberLearning,cooperative,numberOpponents,limitFrames,serverPid,seed=None,ballInOffense=True):
         """Initiates the server process.             
         """
         
@@ -441,9 +435,9 @@ def init_server(self,numberLearning,cooperative,numberOpponents,port,limitFrames
 
         #Including the name of the executable, default parameters, and the port in the command
         #serverCommand = self.serverPath + "HFO --fullstate --offense-on-ball 12" \
-        serverCommand = self.serverPath + "HFO --fullstate" \
-                                          " --no-logging --headless " + \
-             "--port " +str(self.serverPort)
+        serverCommand = serverPath + "HFO --fullstate" \
+                                          " --no-logging --no-sync " + \
+             "--port " +str(serverPort)
         if ballInOffense:
             #Ball starts with a random attacking agent
             serverCommand += " --offense-on-ball 12"
@@ -453,9 +447,9 @@ def init_server(self,numberLearning,cooperative,numberOpponents,port,limitFrames
         print(serverCommand)
         
         #Starting the server
-        self.serverProcess = subprocess.Popen(serverCommand, shell=True)
+        serverPid[0] = subprocess.Popen(serverCommand, shell=True)
         
-        time.sleep(3)
+        
         
 
         #self.clientProcess = []
@@ -465,3 +459,21 @@ def init_server(self,numberLearning,cooperative,numberOpponents,port,limitFrames
         #    print(friendCommand)
         #    self.clientProcess.append(subprocess.Popen(friendCommand, shell=True))
         #    time.sleep(1)
+        
+        
+        
+def clean_connections(serverProcess):
+        """Cleans all the initiated services and files"""
+        #self.clearServer = [True]*self.numberLearning
+        #Wait until another thread finishes the HFO client
+        #while True in self.clearServer:
+        #    pass
+        
+        #Kill the HFO server
+        #subprocess.call("kill -9 -"+str(self.serverProcess.pid), shell=True)
+        #for proc in self.clientProcess:
+        #    subprocess.call("kill -9 -" + str(proc.pid), shell=True)
+        subprocess.call("kill -9 -"+str(serverProcess.pid), shell=True)
+
+        time.sleep(2)
+        #portmanager.release_port(self.serverPort)

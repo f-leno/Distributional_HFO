@@ -16,6 +16,7 @@ import hfo
 from threading import Thread
 from time import sleep
 from environment.hfoenvironment import HFOEnvironment
+import environment.hfoenvironment as hfoenvironment
 #from cmac import CMAC
 
 
@@ -27,9 +28,9 @@ from statespace_util import *
 #Arguments
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n','--number_agents',type=int, default=1)
+    parser.add_argument('-n','--number_agents',type=int, default=3)
     parser.add_argument('-c','--n_npcs',type=int, default=0)
-    parser.add_argument('-o','--opponents',type=int, default=1)
+    parser.add_argument('-o','--opponents',type=int, default=2)
     parser.add_argument('-a1','--agent1',  default='Dummy')
     parser.add_argument('-a2','--agent2',  default='Dummy')
     parser.add_argument('-a3','--agent3',  default='Dummy')
@@ -48,7 +49,7 @@ def get_args():
     parser.add_argument('-l','--log_file',default='./log/')
     parser.add_argument('-p','--port',type=int, default=12345)
     parser.add_argument('-r','--number_trial',type=int, default=1)
-    parser.add_argument('-e','--server_path',  default='../../HFO/bin/')
+    parser.add_argument('-e','--server_path',  default='../HFO/bin/')
     return parser.parse_args()
 
 
@@ -90,8 +91,18 @@ def main():
     global okThread
     okThread = True
     
-    environment = HFOEnvironment(numberLearning=parameter.number_agents,cooperative=parameter.n_npcs,
-                    numberOpponents=parameter.opponents,port=parameter.port,limitFrames = 200)
+    #Initiate the server
+    seed = 1
+    serverPid = [None]
+    t = Thread(target=hfoenvironment.init_server, args=(parameter.server_path,parameter.port,
+                                         parameter.number_agents,parameter.n_npcs,
+                                         parameter.opponents,200,serverPid,seed))
+    t.start()
+    t.join()
+        
+    sleep(2)
+    
+    print(serverPid)
     
     #As we need more than one agent in the team, separated threads execute
     #each needed agent
@@ -100,9 +111,9 @@ def main():
     try:
         #Initiating agent
         for i in range(parameter.number_agents):
-            agentThreads.append(Thread(target = thread_agent, args=(agents[i],agents,i,environment,parameter)))
+            agentThreads.append(Thread(target = thread_agent, args=(agents[i],agents,i,parameter)))
             agentThreads[i].start()
-            sleep(4)
+            sleep(2)
             
             
         #Waiting for program termination
@@ -116,14 +127,17 @@ def main():
    
     
 
+    hfoenvironment.clean_connections(serverPid[0])
     
 
     
     
-def thread_agent(agentObj,allAgents,agentIndex,environment,mainParameters):
+def thread_agent(agentObj,allAgents,agentIndex,mainParameters):
     """This method is executed by each thread in the system and corresponds to the control
     of one playing agent"""
-    import copy
+    
+    environment = HFOEnvironment(numberLearning=mainParameters.number_agents,cooperative=mainParameters.n_npcs,
+                    numberOpponents=mainParameters.opponents,port=mainParameters.port,limitFrames = 200)
     
     logFolder = mainParameters.log_file + getattr(mainParameters,"agent"+str(agentIndex+1))
     if not os.path.exists(logFolder):

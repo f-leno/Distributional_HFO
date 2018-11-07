@@ -10,7 +10,7 @@ class Dummy(Agent):
         
     def select_action(self, state):
         """ When this method is called, the agent executes an action. """
-        act = random.choice(self.environment.all_actions())
+        act = random.choice(self.environment.all_actions(self.agentIndex))
         #print(state)
         #print("***Chosen action: "+str(act)+"  Agent: "+str(self.environment.get_unum(self.agentIndex)))
         return act
