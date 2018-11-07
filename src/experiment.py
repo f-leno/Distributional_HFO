@@ -27,9 +27,9 @@ from statespace_util import *
 #Arguments
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n','--number_agents',type=int, default=3)
+    parser.add_argument('-n','--number_agents',type=int, default=1)
     parser.add_argument('-c','--n_npcs',type=int, default=0)
-    parser.add_argument('-o','--opponents',type=int, default=2)
+    parser.add_argument('-o','--opponents',type=int, default=1)
     parser.add_argument('-a1','--agent1',  default='Dummy')
     parser.add_argument('-a2','--agent2',  default='Dummy')
     parser.add_argument('-a3','--agent3',  default='Dummy')
@@ -102,7 +102,7 @@ def main():
         for i in range(parameter.number_agents):
             agentThreads.append(Thread(target = thread_agent, args=(agents[i],agents,i,environment,parameter)))
             agentThreads[i].start()
-            sleep(1)
+            sleep(4)
             
             
         #Waiting for program termination
@@ -123,6 +123,7 @@ def main():
 def thread_agent(agentObj,allAgents,agentIndex,environment,mainParameters):
     """This method is executed by each thread in the system and corresponds to the control
     of one playing agent"""
+    import copy
     
     logFolder = mainParameters.log_file + getattr(mainParameters,"agent"+str(agentIndex+1))
     if not os.path.exists(logFolder):
@@ -132,6 +133,7 @@ def thread_agent(agentObj,allAgents,agentIndex,environment,mainParameters):
     #Connecting agent to server 
     print("******Connecting agent "+str(agentIndex)+"****")
     agentObj.connect_env(environment,agentIndex)
+    print(environment.get_unum(agentIndex))
     #Building Log folder name
     print("******Connected agent "+str(agentIndex)+"****")
     

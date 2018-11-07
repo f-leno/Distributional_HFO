@@ -39,6 +39,7 @@ class Agent(object):
         """Connects to the domain environment"""
         self.environment = environment
         self.agentIndex = agentIndex
+        environment.connect_server(agentIndex)
         
 
     @abc.abstractmethod
