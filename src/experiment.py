@@ -68,8 +68,9 @@ def build_agents():
                 __import__('agents.' + (agentName).lower(),
                         fromlist=[agentName]),
                 agentName)
-        except ImportError:
-           sys.stderr.write("ERROR: missing python module: " +agentName + "\n")
+        except ImportError as e:
+           print(e)
+           sys.stderr.write("ERROR: importing python module: " +agentName + "\n")
            sys.exit(1)
     
         print("Creating agent")
