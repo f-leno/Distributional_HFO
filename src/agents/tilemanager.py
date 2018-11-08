@@ -5,7 +5,7 @@ Created on Thu Aug 24 10:07:15 2017
 Class to control tile coding defininitions
 @author: Felipe Leno
 """
-import Tiles.tiles as tiles
+import agents.Tiles.tiles as tiles
 class TileManager():
     
     #Default parameters for tiles

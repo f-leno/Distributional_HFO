@@ -436,7 +436,7 @@ def init_server(serverPath,serverPort,numberLearning,cooperative,numberOpponents
         #Including the name of the executable, default parameters, and the port in the command
         #serverCommand = self.serverPath + "HFO --fullstate --offense-on-ball 12" \
         serverCommand = serverPath + "HFO --fullstate" \
-                                          " --no-logging --no-sync " + \
+                                          " --no-logging --headless " + \
              "--port " +str(serverPort)
         if ballInOffense:
             #Ball starts with a random attacking agent
