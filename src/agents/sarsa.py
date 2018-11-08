@@ -169,6 +169,5 @@ class SARSA(Agent):
     def get_used_budget(self):
         return 0.0
 
-    def get_used_budget(self):
-        return 0
+   
  

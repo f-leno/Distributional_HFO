@@ -134,7 +134,11 @@ class HFOEnvironment(object):
         #print(fullState[self.stateSpaceManager.ABLE_KICK])
         withBall = fullState[self.stateSpaceManager.ABLE_KICK] == 1.0
                 
-        return hfoactions.all_actions(self.numberFriends, withBall, forExploration)  
+        return hfoactions.all_actions(self.numberFriends, withBall, forExploration) 
+
+    def possible_actions(self):
+        """ Return all possible actions, regardless of if they are applicable in the current state """
+        return hfoactions.possible_actions(self.numberFriends)
         
     def act(self,action,agentIndex=0):
         """Performs the agent action"""

@@ -19,6 +19,20 @@ def pass_index(action):
     """Returns the index of the agent to pass the ball. As smaller the action
     index, as smaller the distance between the agents"""
     return action - passInterfaceInit
+def possible_actions(numberFriends):
+    """Returns all possible actions regardless of if they are applicable in the
+        current state or not
+    """
+    allActions = [hfo.MOVE,hfo.SHOOT,hfo.DRIBBLE]
+    
+    #Pass actions
+    i = 0
+    while i < numberFriends:
+        allActions.append(passInterfaceInit + i)
+        i +=1
+        
+    return allActions
+        
 
 def all_actions(numberFriends, withBall, forExploration=False):
     """Returns all the possible actions for the current situation. If more than

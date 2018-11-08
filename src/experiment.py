@@ -28,9 +28,9 @@ from statespace_util import *
 #Arguments
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n','--number_agents',type=int, default=3)
+    parser.add_argument('-n','--number_agents',type=int, default=1)
     parser.add_argument('-c','--n_npcs',type=int, default=0)
-    parser.add_argument('-o','--opponents',type=int, default=2)
+    parser.add_argument('-o','--opponents',type=int, default=1)
     parser.add_argument('-a1','--agent1',  default='Dummy')
     parser.add_argument('-a2','--agent2',  default='Dummy')
     parser.add_argument('-a3','--agent3',  default='Dummy')
@@ -43,7 +43,7 @@ def get_args():
     parser.add_argument('-a10','--agent10',default='Dummy')
     parser.add_argument('-a11','--agent11',default='Dummy')
     parser.add_argument('-t','--learning_trials',type=int, default=10000)
-    parser.add_argument('-i','--evaluation_interval',type=int, default=40)
+    parser.add_argument('-i','--evaluation_interval',type=int, default=100)
     parser.add_argument('-d','--evaluation_duration',type=int, default=100)
     parser.add_argument('-s','--seed',type=int, default=12345)
     parser.add_argument('-l','--log_file',default='./log/')

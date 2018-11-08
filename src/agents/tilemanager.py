@@ -12,7 +12,7 @@ class TileManager():
     memct = 20 #memory for hashtable
     numtilings = 5 #Number of tiles
     
-    #10 5 for single agent
+    #20 5 for single agent
 
     memctFriend = 48 #memory for hashtable
     numtilingsFriend = 2 #Number of tiles
