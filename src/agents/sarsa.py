@@ -39,7 +39,7 @@ class SARSA(Agent):
     #Backup saved experiments
     #def __init__(self, seed=12345,alpha=0.7,epsilon=0.1,initQ = 0, decayRate = 0.92):
     def __init__(self, seed=12345, alpha=0.1, epsilon=0.1, initQ=0, decayRate=0.9):
-
+        super(SARSA, self).__init__(seed=seed)
         self.functions = Agent_Utilities()
         self.originalAlpha = alpha
         self.alpha = self.originalAlpha
@@ -50,7 +50,7 @@ class SARSA(Agent):
         self.initQ = initQ
         #self.tileManager = TileManager()
         self.tileManager = TileManager()
-        super(SARSA, self).__init__(seed=seed)
+        
         
         
              
@@ -77,6 +77,9 @@ class SARSA(Agent):
         else:
             #action =  self.exp_strategy(state)
             action = self.policy_check(state)
+            
+        #if self.agentIndex==0:
+        #    print(len(self.qTable))
         
         return action
 
@@ -90,14 +93,14 @@ class SARSA(Agent):
         
     def max_Q_action(self,state,forExploration):
         """Returns the action that corresponds to the highest Q-value"""
-        actions = self.environment.all_actions(forExploration=forExploration)#,agentIndex=self.agentIndex)
+        actions = self.environment.all_actions(self.agentIndex,forExploration=forExploration)#,agentIndex=self.agentIndex)
         #if len(actions)==1:
             #return actions[0]
         v,a =  self.functions.get_max_Q_value_action(self.qTable,state,actions,self.exploring,self)
         return a
     def get_max_Q_value(self,state,forExploration):
         """Returns the maximum Q value for a state"""
-        actions = self.environment.all_actions(forExploration=forExploration)#,agentIndex=self.agentIndex)
+        actions = self.environment.all_actions(self.agentIndex,forExploration=forExploration)#,agentIndex=self.agentIndex)
         #if len(actions)==1:
         #    return self.readQTable(state,actions[0])
         v,a =  self.functions.get_max_Q_value_action(self.qTable,state,actions,self.exploring,self)
@@ -109,7 +112,7 @@ class SARSA(Agent):
         """Returns the result of the exploration strategy"""
         prob = random.random()
         if prob <= self.epsilon:
-            allActions = self.environment.all_actions(forExploration=True)#,agentIndex=self.agentIndex)
+            allActions = self.environment.all_actions(self.agentIndex,forExploration=True)#,agentIndex=self.agentIndex)
             return random.choice(allActions)
         return self.max_Q_action(state,forExploration=True)
            
@@ -162,6 +165,9 @@ class SARSA(Agent):
         """Initiates the alpha for new task"""
         super(SARSA, self).finish_learning()
         self.alpha = self.originalAlpha
+        
+    def get_used_budget(self):
+        return 0.0
 
 
  

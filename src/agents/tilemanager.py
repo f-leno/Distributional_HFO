@@ -5,12 +5,14 @@ Created on Thu Aug 24 10:07:15 2017
 Class to control tile coding defininitions
 @author: Felipe Leno
 """
-import Tiles.tiles as tiles
+import agents.Tiles.tiles as tiles
 class TileManager():
     
     #Default parameters for tiles
-    memct = 48 #memory for hashtable
+    memct = 20 #memory for hashtable
     numtilings = 5 #Number of tiles
+    
+    #10 5 for single agent
 
     memctFriend = 48 #memory for hashtable
     numtilingsFriend = 2 #Number of tiles

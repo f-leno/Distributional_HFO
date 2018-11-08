@@ -42,8 +42,8 @@ def get_args():
     parser.add_argument('-a9','--agent9',  default='Dummy')
     parser.add_argument('-a10','--agent10',default='Dummy')
     parser.add_argument('-a11','--agent11',default='Dummy')
-    parser.add_argument('-t','--learning_trials',type=int, default=5000)
-    parser.add_argument('-i','--evaluation_interval',type=int, default=20)
+    parser.add_argument('-t','--learning_trials',type=int, default=10000)
+    parser.add_argument('-i','--evaluation_interval',type=int, default=40)
     parser.add_argument('-d','--evaluation_duration',type=int, default=100)
     parser.add_argument('-s','--seed',type=int, default=12345)
     parser.add_argument('-l','--log_file',default='./log/')
@@ -179,7 +179,9 @@ def thread_agent(agentObj,allAgents,agentIndex,mainParameters):
             for eval_trials in range(1,mainParameters.evaluation_duration+1):
                 eval_frame = 0
                 curGamma = 1.0
-                                
+                environment.start_episode()
+                
+                eval_status = -1              
                 while not environment.is_terminal_state():
                     eval_frame += 1
                     state = environment.get_state(agentIndex)
@@ -190,11 +192,15 @@ def thread_agent(agentObj,allAgents,agentIndex,mainParameters):
                     eval_status = environment.lastStatus
                     discR = discR + reward * curGamma
                     curGamma = curGamma * gamma
-                    if(eval_status == hfo.GOAL):
+                    
+                if(eval_status == hfo.GOAL):
                         goals += 1.0
                         time_to_goal += eval_frame
+                #print(str(eval_trials) + ' -- ' + str(eval_status))
+                    
+                
                         #print('********** %s: GGGGOOOOOOOOOOLLLL: %s in %s' % (str(AGENT.unum), str(goals), str(time_to_goal)))
-            goal_percentage = 100*goals/mainParameters.evaluation_duration
+            goal_percentage = 100.*goals/mainParameters.evaluation_duration
             #print('***** %s: Goal Percentage: %s' % (str(AGENT.unum), str(goal_percentage)))
             if (goals != 0):
                 avg_goal_time = time_to_goal/goals
