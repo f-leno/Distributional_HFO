@@ -42,7 +42,7 @@ def get_args():
     parser.add_argument('-a9','--agent9',  default='Dummy')
     parser.add_argument('-a10','--agent10',default='Dummy')
     parser.add_argument('-a11','--agent11',default='Dummy')
-    parser.add_argument('-t','--learning_trials',type=int, default=10000)
+    parser.add_argument('-t','--learning_trials',type=int, default=5000)
     parser.add_argument('-i','--evaluation_interval',type=int, default=100)
     parser.add_argument('-d','--evaluation_duration',type=int, default=100)
     parser.add_argument('-s','--seed',type=int, default=12345)

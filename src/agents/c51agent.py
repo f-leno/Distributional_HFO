@@ -43,6 +43,8 @@ class C51Agent(Agent):
     environmentActions = None
     loadWeights = None
     
+    useBoltzmann = True
+    useThreeNetworks = True
     
     n_hidden = 5
     n_neuronsHidden = 6
@@ -265,16 +267,31 @@ class C51Agent(Agent):
                 return random.choice(possibleActions)
             
         for state in states:
-            maxV = -float('inf')
-            maxAct = None
-            for act in possibleActions:
-                qV = self.calc_Q(state,act,network)
-                if qV > maxV:
-                    maxV = qV
-                    maxAct = [act]
-                elif qV == maxV:
-                    maxAct.append(act)
-            return_act.append(random.choice(maxAct))
+            if self.useBoltzmann:
+                act_vals = np.array([self.calc_Q(state,act,network) for act in possibleActions])
+                act_vals = act_vals - min(act_vals) + 0.00001 #Avoiding division by 0
+                sum_vals = sum(act_vals)
+                act_vals = act_vals / sum_vals
+                rV = self.rnd.random()
+                summedVal = 0.0
+                currentIndex = 0
+                
+                while summedVal+act_vals[currentIndex] < rV:
+                    summedVal += act_vals[currentIndex]
+                    currentIndex += 1
+                return_act.append(possibleActions[currentIndex])
+                
+            else:
+                maxV = -float('inf')
+                maxAct = None
+                for act in possibleActions:
+                    qV = self.calc_Q(state,act,network)
+                    if qV > maxV:
+                        maxV = qV
+                        maxAct = [act]
+                    elif qV == maxV:
+                        maxAct.append(act)
+                return_act.append(random.choice(maxAct))
         if not multipleOut:
             return return_act[0]
         return return_act
