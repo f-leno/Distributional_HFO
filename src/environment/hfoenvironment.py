@@ -122,17 +122,16 @@ class HFOEnvironment(object):
         #self.clean_connections(serverProcess)
         
 
-    def get_state(self,agentIndex=0):
-        return self.hfoObj[agentIndex].getState()
-    def all_actions(self,agentIndex,forExploration=False):
+    #def get_state(self,agentIndex=0):
+    #    return self.hfoObj[agentIndex].getState()
+    def all_actions(self,state,agentIndex,forExploration=False):
         """Returns the set of applicable actions for the agent
            in case the agent has the ball, a PASS for each friend, DRIBBLE and SHOOT
            are applicable. Otherwise, only MOVE is applicable
         """
-        fullState = self.hfoObj[agentIndex].getState()
-        #fullState = self.hfoObj.getState()
-        #print(fullState[self.stateSpaceManager.ABLE_KICK])
-        withBall = fullState[self.stateSpaceManager.ABLE_KICK] == 1.0
+        #fullState = self.hfoObj[agentIndex].getState()
+        #withBall = fullState[self.stateSpaceManager.ABLE_KICK] == 1.0
+        withBall = state[0]
                 
         return hfoactions.all_actions(self.numberFriends, withBall, forExploration) 
 
@@ -255,7 +254,13 @@ class HFOEnvironment(object):
         """Returns the state in the point of view of the agent. 
         The state features are filtered from the full set of features in the HFO server.
         """
-        return self.filter_features(self.hfoObj[agentIndex].getState())
+        fullState = self.hfoObj[agentIndex].getState()
+        withBall = fullState[self.stateSpaceManager.ABLE_KICK] == 1.0
+        filtered = self.filter_features(fullState)
+        compositeState = (withBall,filtered)
+        return compositeState
+
+ 
         #return self.filter_features(self.hfoObj.getState())
     
     def filter_features(self,stateFeatures):

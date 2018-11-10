@@ -33,7 +33,7 @@ class GraphBuilder():
     
     def update_graph(self,state,step=None):
         N = self.agent.N
-        actions = self.environment.all_actions(0)
+        actions = self.environment.all_actions(state,0)
         
         #graph, ax = plt.subplots()
         ax = self.window
@@ -44,7 +44,7 @@ class GraphBuilder():
         sum_distrib = np.zeros((1,N))
         acc_probs = np.zeros((len(actions),N))
         for i in range(len(actions)):
-            distrib = self.agent.get_distrib(state,actions[i])
+            distrib = self.agent.get_distrib(state[1],actions[i])
             sum_distrib += distrib
             acc_probs[i,:] = np.copy(sum_distrib)[:]
         
@@ -53,7 +53,7 @@ class GraphBuilder():
                  bars.remove()
         
         self.graphData = [None]*len(actions)
-        index = index * self.agent.deltaZ
+        index = self.agent.z_vec
         for i in reversed(range(len(actions))):
             self.graphData[i] = ax.bar(index,acc_probs[i],width,color=self.colors[i],label=str(actions[i]))
         ax.set_ylabel('Prob')

@@ -32,8 +32,8 @@ class C51Agent(Agent):
     targetNet = None
     
     replay_memory = None
-    maxBatchSize = 5000
-    miniBatchSize = 1000
+    maxBatchSize = 10000
+    miniBatchSize = 2000
     learningSteps = None
     countReplayActions = None
     
@@ -47,7 +47,7 @@ class C51Agent(Agent):
     useThreeNetworks = True
     
     n_hidden = 5
-    n_neuronsHidden = 6
+    n_neuronsHidden = 50
     
     def __init__(self,seed=12345,alpha=0.01, epsilon=0.1,Vmin = -1.5,Vmax = 1.5, N=51, loadWeights=False):
         super(C51Agent, self).__init__(seed=seed)
@@ -59,6 +59,7 @@ class C51Agent(Agent):
         self.z_vec = np.array([Vmin + i*self.deltaZ for i in range(N)])
         self.epsilon = epsilon
         self.loadWeights = loadWeights
+        self.gamma = 0.99
         
         
         self.rnd = random.Random(seed)
@@ -84,7 +85,7 @@ class C51Agent(Agent):
             each hidden layer) as well as on the number of possible actions in the environment.
             This function must be called after the agent has been connected to the environment,
         """
-        featureSize = len(self.environment.get_state())
+        featureSize = len(self.environment.get_state()[1])
         #Input layer
         inputs =  keras.layers.Input(shape = (featureSize,))
         #inputs = keras.layers.Input(shape=(environment.N_INPUTS,))
@@ -96,23 +97,45 @@ class C51Agent(Agent):
             net = keras.layers.Dense(self.n_neuronsHidden, activation='relu')(net)
         n_act = len(self.environmentActions) 
         
-        actLayers = []
         
-        for i in range(n_act):
-            actLayers.append(keras.layers.Dense(self.N, activation='softmax')(net))
+        if self.useThreeNetworks:
+            self.network = []
+            self.targetNet = [] 
         
-        self.network = keras.models.Model(inputs = inputs, outputs=actLayers)
-        optimizer = keras.optimizers.Adam(lr = self.alpha)
-        self.network.compile(optimizer = optimizer,
-                      loss='categorical_crossentropy'
-                      )
-        self.targetNet = keras.models.clone_model(model=self.network)
+            actLayer = keras.layers.Dense(self.N, activation='softmax')(net)
+            
+            network = keras.models.Model(inputs = inputs, outputs=actLayer)         
+            
+            for i in range(n_act):
+                self.network.append(keras.models.clone_model(model=network))
+                optimizer = keras.optimizers.Adam(lr = self.alpha)
+                self.network[i].compile(optimizer = optimizer,
+                          loss='categorical_crossentropy'
+                          )
+                self.targetNet.append(keras.models.clone_model(model=network))
+        else:            
+            actLayers = []   
+            
+            
+            for i in range(n_act):
+                actLayers.append(keras.layers.Dense(self.N, activation='softmax')(net))
+            
+            self.network = keras.models.Model(inputs = inputs, outputs=actLayers)
+            optimizer = keras.optimizers.Adam(lr = self.alpha)
+            self.network.compile(optimizer = optimizer,
+                          loss='categorical_crossentropy'
+                          )
+            self.targetNet = keras.models.clone_model(model=self.network)
         
         
         
         
     def update_target(self):
-        self.targetNet.set_weights(self.network.get_weights())
+        if self.useThreeNetworks:
+            for i in range(len(self.network)):
+                self.targetNet[i].set_weights(self.network[i].get_weights())
+        else:
+            self.targetNet.set_weights(self.network.get_weights())
     
     
     def calc_z_i(self,i):
@@ -197,17 +220,25 @@ class C51Agent(Agent):
         terminal = []
         
         for samples in batch:
-            states.append(samples[0])
+            states.append(samples[0][1])
             actions.append(self.environmentActions.index(samples[1]))
             statesPrime.append(samples[2])
             rewards.append(samples[3])
             terminal.append(samples[4])
         states = np.array(states)
-        statesPrime = np.array(statesPrime)
+        #statesPrime = np.array(statesPrime)
         
         next_acts = self.select_action(statesPrime, multipleOut=True, network=self.network) #use self.network
         next_acts = [self.environmentActions.index(a) for a in next_acts]
-        z_prime = self.targetNet.predict(statesPrime)  #Use target network
+        
+        z_prime = None
+        statesPrime = np.array([statep[1] for statep in statesPrime])
+        if self.useThreeNetworks:
+            z_prime = []
+            for target in self.targetNet:
+                z_prime.append(target.predict(statesPrime))
+        else:
+            z_prime = self.targetNet.predict(statesPrime)  #Use target network
         
         #Calculate projection (m)
         for i in range(size_batch):
@@ -226,7 +257,15 @@ class C51Agent(Agent):
                     m_u = np.ceil(bj)
                     m[actions[i]][i][int(m_l)] += z_prime[next_acts[i]][i][j] * (m_u - bj)
                     m[actions[i]][i][int(m_u)] += z_prime[next_acts[i]][i][j] * (bj - m_l)
-        self.network.fit(states, m, batch_size=size_batch, verbose=0)
+                    
+        if self.useThreeNetworks:
+            for i in range(len(self.network)):
+                indexes = np.array(actions) == i
+                statesNet = states[indexes]
+                if len(statesNet) > 0:
+                    self.network[i].fit(statesNet, m[i][indexes][:], batch_size=len(statesNet), verbose=0, epochs=2)
+        else:
+            self.network.fit(states, m, batch_size=size_batch, verbose=0)
                       
         
         
@@ -241,57 +280,65 @@ class C51Agent(Agent):
     def get_distrib(self,state,action,network=None):
         if network is None:
             network = self.network
-        distrib = network.predict(np.array([state]))
         act_idx = self.environmentActions.index(action)
-        return distrib[act_idx][0] #np.array([self.prob(i,state,action) for i in range(self.N)])
+        distrib = None
+        if self.useThreeNetworks:
+            distrib = network[act_idx].predict(np.array([state]))
+            distrib = distrib[0]
+        else:
+            distrib = network.predict(np.array([state]))
+            distrib = distrib[act_idx][0]
+        
+        return distrib #np.array([self.prob(i,state,action) for i in range(self.N)])
 
     def select_action(self,states,multipleOut=False,network=None):
         return_act = []
         
-        possibleActions = self.environment.all_actions(self.agentIndex)
-        
-        if len(possibleActions)==1 and not multipleOut:
-            return possibleActions[0]
-        
-        if network is None:
-            network = self.targetNet
-        
-        if isinstance(states,tuple):
-            states = np.array([states])
-            
-
         if self.exploring:
             rV = self.rnd.random()
             
             if rV <= self.epsilon and not multipleOut:
-                return random.choice(possibleActions)
+                return random.choice(self.environment.all_actions(states,self.agentIndex))
+                
+        if network is None:
+            network = self.targetNet
+        
+        if isinstance(states,tuple):
+            states = [states]
+            
             
         for state in states:
-            if self.useBoltzmann:
-                act_vals = np.array([self.calc_Q(state,act,network) for act in possibleActions])
-                act_vals = act_vals - min(act_vals) + 0.00001 #Avoiding division by 0
-                sum_vals = sum(act_vals)
-                act_vals = act_vals / sum_vals
-                rV = self.rnd.random()
-                summedVal = 0.0
-                currentIndex = 0
-                
-                while summedVal+act_vals[currentIndex] < rV:
-                    summedVal += act_vals[currentIndex]
-                    currentIndex += 1
-                return_act.append(possibleActions[currentIndex])
-                
+            possibleActions = self.environment.all_actions(state,self.agentIndex)
+            if len(possibleActions)==1:
+                return_act.append(possibleActions[0])
             else:
-                maxV = -float('inf')
-                maxAct = None
-                for act in possibleActions:
-                    qV = self.calc_Q(state,act,network)
-                    if qV > maxV:
-                        maxV = qV
-                        maxAct = [act]
-                    elif qV == maxV:
-                        maxAct.append(act)
-                return_act.append(random.choice(maxAct))
+                state = np.array(state[1])
+                
+                if self.useBoltzmann:
+                    act_vals = np.array([self.calc_Q(state,act,network) for act in possibleActions])
+                    act_vals = act_vals - min(act_vals) + 0.00001 #Avoiding division by 0
+                    sum_vals = sum(act_vals)
+                    act_vals = act_vals / sum_vals
+                    rV = self.rnd.random()
+                    summedVal = 0.0
+                    currentIndex = 0
+                    
+                    while summedVal+act_vals[currentIndex] < rV:
+                        summedVal += act_vals[currentIndex]
+                        currentIndex += 1
+                    return_act.append(possibleActions[currentIndex])
+                    
+                else:
+                    maxV = -float('inf')
+                    maxAct = None
+                    for act in possibleActions:
+                        qV = self.calc_Q(state,act,network)
+                        if qV > maxV:
+                            maxV = qV
+                            maxAct = [act]
+                        elif qV == maxV:
+                            maxAct.append(act)
+                    return_act.append(random.choice(maxAct))
         if not multipleOut:
             return return_act[0]
         return return_act
@@ -304,10 +351,18 @@ class C51Agent(Agent):
         fileFolder = "./agentFiles/C51/"
         if not os.path.exists(fileFolder):
             os.makedirs(fileFolder)
-        self.network.save_weights(fileFolder+"C51Model.h5")           
+        if self.useThreeNetworks:
+            for i in range(len(self.network)):
+                self.network[i].save_weights(fileFolder+"C51Model"+str(i)+".h5")
+        else:
+            self.network.save_weights(fileFolder+"C51Model.h5")           
     def load_weights(self): 
         """Loads previously saved weight files"""
-        fileFolder = "./agentFiles/C51/C51Model.h5"
-        self.network.load_weights(fileFolder)     
+        fileFolder = "./agentFiles/C51/"
+        if self.useThreeNetworks:
+            for i in range(len(self.network)):
+                self.network[i].load_weights(fileFolder+"C51Model"+str(i)+".h5")
+        else:
+            self.network.load_weights(fileFolder+"C51Model.h5")     
         
         
