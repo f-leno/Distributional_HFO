@@ -9,6 +9,8 @@ class GraphBuilder():
     
     graphData = None
     
+    storedData = None
+    delaySave = None
     colors = [(0.2588,0.4433,1.0),
               (1.0,0.5,0.62),
               (0.,0.,0.)
@@ -16,17 +18,19 @@ class GraphBuilder():
     
     window = None
     
-    def __init__(self,agent,environment):
+    def __init__(self,agent,environment,delaySave=True):
         self.agent = agent
         self.environment = environment
         graph, ax = plt.subplots()
         self.window = ax
+        self.delaySave = delaySave
+        self.storedData = []
         
         
         
         FFMpegWriter = manimation.writers['ffmpeg']
-        metadata = dict(title='Movie Test', artist='Matplotlib',
-                comment='Movie support!')
+        metadata = dict(title='Movie Test', artist='Distributional_HFO',
+                comment='')
         self.movieWriter = FFMpegWriter(fps=15, metadata=metadata)
         self.movieWriter.setup(graph,'./outputVideo.mp4',100)
         
@@ -36,10 +40,7 @@ class GraphBuilder():
         actions = self.environment.all_actions(state,0)
         
         #graph, ax = plt.subplots()
-        ax = self.window
-        width = 0.35
         
-        index = np.arange(N)
         
         sum_distrib = np.zeros((1,N))
         acc_probs = np.zeros((len(actions),N))
@@ -47,10 +48,29 @@ class GraphBuilder():
             distrib = self.agent.get_distrib(state[1],actions[i])
             sum_distrib += distrib
             acc_probs[i,:] = np.copy(sum_distrib)[:]
+            
+        print(step)
+        data = [step, acc_probs, actions]
+        if self.delaySave:
+            self.storedData.append(data)
+        else:
+            self.save_file(data)
+            
+    def save_file(self,data):
+        step = data[0]
+        acc_probs = data[1]
+        actions = data[2]
+        
+        N = self.agent.N
+        
+        ax = self.window
+        width = 0.35
+        
+        index = np.arange(N)
         
         if self.graphData is not None:
              for bars in self.graphData:
-                 bars.remove()
+                 bars.remove() 
         
         self.graphData = [None]*len(actions)
         index = self.agent.z_vec
@@ -69,6 +89,10 @@ class GraphBuilder():
         self.movieWriter.grab_frame()
         
     def finish(self):
+        if self.delaySave:
+            import time
+            for data in self.storedData:
+                self.save_file(data)
         self.movieWriter.finish()    
         #graph.xticks(np.arange(min(self.agent.z_vec), max(self.agent.z_vec)+1, 5.0))
         

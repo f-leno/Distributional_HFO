@@ -14,10 +14,11 @@ agent.connect_env(environment,0)
 graphB = GraphBuilder(agent,environment)
 agent.exploring = False
 
-episodes = 20
+episodes = 5
 intervalVideo = 5
 
 step = 0
+
 
 for epi in range(episodes):
     environment.start_episode()   
@@ -26,9 +27,9 @@ for epi in range(episodes):
         environment.act(act)
         statePrime,action,reward = environment.step()
         step+=1
-        #if step % intervalVideo == 0:
-        if len(environment.all_actions(statePrime,0)) > 1:
-            graphB.update_graph(environment.get_state(),step)
+        #if step % intervalVideo == 0 and len(environment.all_actions(statePrime,0)) > 1:
+        #if len(environment.all_actions(statePrime,0)) > 1:
+        graphB.update_graph(environment.get_state(),step)
             
     #graphB.build_graph(env.S1)
 
