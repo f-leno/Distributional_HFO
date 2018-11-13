@@ -35,7 +35,7 @@ class GraphBuilder():
         self.movieWriter.setup(graph,'./outputVideo.mp4',100)
         
     
-    def update_graph(self,state,step=None):
+    def update_graph(self,state,step=None,action=None):
         N = self.agent.N
         actions = self.environment.all_actions(state,0)
         
@@ -50,7 +50,7 @@ class GraphBuilder():
             acc_probs[i,:] = np.copy(sum_distrib)[:]
             
         print(step)
-        data = [step, acc_probs, actions]
+        data = [step, acc_probs, actions,action]
         if self.delaySave:
             self.storedData.append(data)
         else:
@@ -60,6 +60,7 @@ class GraphBuilder():
         step = data[0]
         acc_probs = data[1]
         actions = data[2]
+        actionTaken = data[3]
         
         N = self.agent.N
         
@@ -84,7 +85,7 @@ class GraphBuilder():
         
         
         if step is not None:
-            ax.set_title(str(step))
+            ax.set_title(str(step)+" - "+str(actionTaken))
         #ax.set_xticks(index)
         self.movieWriter.grab_frame()
         

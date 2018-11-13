@@ -8,6 +8,7 @@
 
 """
 from agents.agent import Agent
+import time
 import numpy as np
 import os
 from math import ceil,floor
@@ -85,7 +86,7 @@ class C51Agent(Agent):
             each hidden layer) as well as on the number of possible actions in the environment.
             This function must be called after the agent has been connected to the environment,
         """
-        featureSize = len(self.environment.get_state()[1])
+        featureSize = len(self.environment.get_state(self.agentIndex)[1])
         #Input layer
         inputs =  keras.layers.Input(shape = (featureSize,))
         #inputs = keras.layers.Input(shape=(environment.N_INPUTS,))
