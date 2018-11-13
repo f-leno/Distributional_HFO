@@ -24,11 +24,11 @@ class HFOStateManager(object):
         """Filters the HFO features returning only the relevant features"""
         
         #Removed Features
-        remove = [self.X_POSITION,
-                  self.Y_POSITION,
-                  self.ORIENTATION,
-                  self.BALL_X,
-                  self.BALL_Y,
+        remove = [#self.X_POSITION,
+                  #self.Y_POSITION,
+                  #self.ORIENTATION,
+                  #self.BALL_X,
+                  #self.BALL_Y,
                   self.ABLE_KICK,
                   #self.CENTER_PROXIMITY,
                   #self.GOAL_ANGLE,
@@ -40,8 +40,8 @@ class HFOStateManager(object):
                   self.FRIEND1_X,self.FRIEND2_X,self.FRIEND3_X,self.FRIEND4_X,
                   self.FRIEND1_Y,self.FRIEND2_Y,self.FRIEND3_Y,self.FRIEND4_Y,
                   self.FRIEND1_NUMBER,self.FRIEND2_NUMBER,self.FRIEND3_NUMBER,self.FRIEND4_NUMBER,
-                  self.OPP1_X,self.OPP2_X,self.OPP3_X,self.OPP4_X,self.OPP5_X,
-                  self.OPP1_Y,self.OPP2_Y,self.OPP3_Y,self.OPP4_Y,self.OPP5_Y,
+                  #self.OPP1_X,self.OPP2_X,self.OPP3_X,self.OPP4_X,self.OPP5_X,
+                  #self.OPP1_Y,self.OPP2_Y,self.OPP3_Y,self.OPP4_Y,self.OPP5_Y,
                   self.OPP1_NUMBER,self.OPP2_NUMBER,self.OPP3_NUMBER,self.OPP4_NUMBER,self.OPP5_NUMBER,
                   self.LAST_ACTION_SUCESS,
                   self.STAMINA
