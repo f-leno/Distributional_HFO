@@ -15,6 +15,7 @@ from math import ceil,floor
 import keras
 import tensorflow as tf
 import random
+from numpy import float64
 
 
 class C51Agent(Agent):
@@ -64,6 +65,8 @@ class C51Agent(Agent):
         
         
         self.rnd = random.Random(seed)
+        np.random.seed(self.rnd.randint(0, 10000))
+        tf.set_random_seed(self.rnd.randint(0, 10000))
         
         self.replay_memory = []
         self.learningSteps = 0
@@ -75,6 +78,7 @@ class C51Agent(Agent):
         self.environmentActions = environment.possible_actions()
         self.countReplayActions = np.zeros(len(self.environmentActions))
         self.build_network()
+        self.update_target()
         if self.loadWeights:
             self.load_weights()
         
@@ -113,7 +117,8 @@ class C51Agent(Agent):
                 self.network[i].compile(optimizer = optimizer,
                           loss='categorical_crossentropy'
                           )
-                self.targetNet.append(keras.models.clone_model(model=network))
+                self.targetNet.append(keras.models.clone_model(model=self.network[i]))
+                
         else:            
             actLayers = []   
             
@@ -127,6 +132,7 @@ class C51Agent(Agent):
                           loss='categorical_crossentropy'
                           )
             self.targetNet = keras.models.clone_model(model=self.network)
+            #self.targetNet.predict(np.zeros((1,featureSize)))
         
         
         
@@ -284,6 +290,7 @@ class C51Agent(Agent):
         act_idx = self.environmentActions.index(action)
         distrib = None
         if self.useThreeNetworks:
+            #print(str(len(state)) + " - " + str(np.array([state]).shape) + str(np.array([state]).dtype))
             distrib = network[act_idx].predict(np.array([state]))
             distrib = distrib[0]
         else:
@@ -333,6 +340,7 @@ class C51Agent(Agent):
                     maxV = -float('inf')
                     maxAct = None
                     for act in possibleActions:
+                        #print(state)
                         qV = self.calc_Q(state,act,network)
                         if qV > maxV:
                             maxV = qV
@@ -364,6 +372,7 @@ class C51Agent(Agent):
             for i in range(len(self.network)):
                 self.network[i].load_weights(fileFolder+"C51Model"+str(i)+".h5")
         else:
-            self.network.load_weights(fileFolder+"C51Model.h5")     
+            self.network.load_weights(fileFolder+"C51Model.h5")  
+        self.update_target()   
         
         
