@@ -278,7 +278,7 @@ class HFOEnvironment(object):
         elif(self.lastStatus == hfo.OUT_OF_BOUNDS):
              return -1.0
         elif(self.lastStatus == hfo.OUT_OF_TIME):
-             return 0.0
+             return -1.0
         elif(self.lastStatus == hfo.GOAL):
              return 1.0
         else:
