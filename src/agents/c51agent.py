@@ -33,17 +33,17 @@ class C51Agent(Agent):
     
     replay_memory = None
     maxBatchSize = 10000
-    miniBatchSize = 2000
+    miniBatchSize = 100
     learningSteps = None
     countReplayActions = None
     
-    learningInterval = 200
-    updateTargetInterval = 400
+    learningInterval = 25
+    updateTargetInterval = 100
     
     environmentActions = None
     loadWeights = None
     
-    useBoltzmann = True
+    useBoltzmann = False
     useThreeNetworks = True
     
     n_hidden = 5
