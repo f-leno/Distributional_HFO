@@ -78,7 +78,7 @@ class C51Agent(Agent):
         self.environmentActions = environment.possible_actions()
         self.countReplayActions = np.zeros(len(self.environmentActions))
         self.build_network()
-        self.update_target()
+        #self.update_target()
         if self.loadWeights:
             self.load_weights()
         
@@ -119,6 +119,7 @@ class C51Agent(Agent):
                           )
                 self.targetNet.append(keras.models.clone_model(model=self.network[i]))
                 
+                
         else:            
             actLayers = []   
             
@@ -134,7 +135,7 @@ class C51Agent(Agent):
             self.targetNet = keras.models.clone_model(model=self.network)
             #self.targetNet.predict(np.zeros((1,featureSize)))
         
-        
+       
         
         
     def update_target(self):
