@@ -128,7 +128,7 @@ def main():
    
     
 
-    hfoenvironment.clean_connections(serverPid[0])
+    hfoenvironment.clean_connections(parameter.port,serverPid[0])
     
 
     

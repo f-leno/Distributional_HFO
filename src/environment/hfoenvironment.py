@@ -457,7 +457,7 @@ def init_server(serverPath,serverPort,numberLearning,cooperative,numberOpponents
         
         #Starting the server
         serverPid[0] = subprocess.Popen(serverCommand, shell=True)
-        
+        print()
         
         
 
@@ -471,7 +471,7 @@ def init_server(serverPath,serverPort,numberLearning,cooperative,numberOpponents
         
         
         
-def clean_connections(serverProcess):
+def clean_connections(port,serverProcess):
         """Cleans all the initiated services and files"""
         #self.clearServer = [True]*self.numberLearning
         #Wait until another thread finishes the HFO client
@@ -482,7 +482,9 @@ def clean_connections(serverProcess):
         #subprocess.call("kill -9 -"+str(self.serverProcess.pid), shell=True)
         #for proc in self.clientProcess:
         #    subprocess.call("kill -9 -" + str(proc.pid), shell=True)
-        subprocess.call("kill -9 -"+str(serverProcess.pid), shell=True)
+        #subprocess.call("kill -9 -"+str(serverProcess.pid), shell=True)
+        subprocess.call('pkill -f "port '+str(port)+'"', shell=True)
+        #print('pkill -f "port '+str(self.serverport)+'"')
 
         time.sleep(2)
         #portmanager.release_port(self.serverPort)

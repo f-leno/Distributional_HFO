@@ -14,7 +14,7 @@ agent.connect_env(environment,0)
 graphB = GraphBuilder(agent,environment)
 agent.exploring = False
 
-episodes = 3
+episodes = 30
 intervalVideo = 5
 
 step = 0
