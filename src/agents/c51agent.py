@@ -266,6 +266,7 @@ class C51Agent(Agent):
                     m[actions[i]][i][int(m_l)] += z_prime[next_acts[i]][i][j] * (m_u - bj)
                     m[actions[i]][i][int(m_u)] += z_prime[next_acts[i]][i][j] * (bj - m_l)
                     
+        
         if self.useThreeNetworks:
             for i in range(len(self.network)):
                 indexes = np.array(actions) == i
