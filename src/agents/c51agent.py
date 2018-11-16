@@ -77,8 +77,12 @@ class C51Agent(Agent):
         super(C51Agent, self).connect_env(environment,agentIndex)
         self.environmentActions = environment.possible_actions()
         self.countReplayActions = np.zeros(len(self.environmentActions))
+        #self.graph = tf.Graph()
+        #self.session = keras.backend.get_session()
+        #with self.session.as_default():
+        #    with self.graph.as_default():
         self.build_network()
-        #self.update_target()
+        self.update_target()
         if self.loadWeights:
             self.load_weights()
         
@@ -117,7 +121,13 @@ class C51Agent(Agent):
                 self.network[i].compile(optimizer = optimizer,
                           loss='categorical_crossentropy'
                           )
+                self.network[i]._make_predict_function()
                 self.targetNet.append(keras.models.clone_model(model=self.network[i]))
+                self.targetNet[i].compile(optimizer = optimizer,
+                          loss='categorical_crossentropy'
+                          )
+                self.targetNet[i]._make_predict_function()
+                #self.targetNet[i].predict(np.zeros((1,featureSize)))
                 
                 
         else:            
@@ -139,11 +149,13 @@ class C51Agent(Agent):
         
         
     def update_target(self):
+        #print("Updateed")
         if self.useThreeNetworks:
             for i in range(len(self.network)):
                 self.targetNet[i].set_weights(self.network[i].get_weights())
         else:
             self.targetNet.set_weights(self.network.get_weights())
+        
     
     
     def calc_z_i(self,i):
@@ -205,12 +217,14 @@ class C51Agent(Agent):
             actI = self.environmentActions.index(action)
             self.countReplayActions[actI] += 1
             
+            #with self.session.as_default():
+            #    with self.graph.as_default():
             if self.learningSteps % self.learningInterval == 0:
                 batch = self.get_mini_batch()#random.sample(self.replay_memory, min(self.miniBatchSize,len(self.replay_memory)))
                 self.train_network(batch)
             if self.learningSteps % self.updateTargetInterval == 0:
                 self.update_target()
-            
+                
 
             
     
@@ -315,8 +329,9 @@ class C51Agent(Agent):
         
         if isinstance(states,tuple):
             states = [states]
-            
-            
+          
+        #with self.session.as_default(): 
+        #    with self.graph.as_default():  
         for state in states:
             possibleActions = self.environment.all_actions(state,self.agentIndex)
             if len(possibleActions)==1:

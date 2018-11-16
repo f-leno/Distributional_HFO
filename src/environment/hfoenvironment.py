@@ -282,7 +282,11 @@ class HFOEnvironment(object):
         elif(self.lastStatus == hfo.GOAL):
              return 1.0
         else:
-            print("%%%%% Strange HFO STATUS: "+hfo.statusToString(self.lastStatus))
+            i = 0 
+            while self.hfoObj[i] is None and i < len(self.hfoObj):
+                i+=1
+            print("%%%%% Strange HFO STATUS: "+self.hfoObj[i].statusToString(self.lastStatus))
+            exit()
         
         return 0.0
     
