@@ -12,7 +12,6 @@ import time
 import numpy as np
 import os
 from math import ceil,floor
-import keras
 import tensorflow as tf
 import random
 from numpy import float64
@@ -30,8 +29,20 @@ class C51Agent(Agent):
     
     rnd = None
     
-    network = None
-    targetNet = None
+    #Networks
+    y_hat, y_hat_target = None,None
+    inputs, inputs_target = None,None
+    
+    #Placeholder to use during training
+    y = None
+    
+    #Tensorflow session
+    session = None
+    
+    #Network Optimizers
+    optimizers = None
+    
+    saver = None
     
     replay_memory = None
     maxBatchSize = 10000
@@ -52,6 +63,15 @@ class C51Agent(Agent):
     n_neuronsHidden = 50
     
     def __init__(self,seed=12345,alpha=0.01, epsilon=0.1,Vmin = -1.5,Vmax = 1.5, N=51, loadWeights=False):
+        """
+            Creates the C51 agent, initializing the main attributes.
+            Some attributes will be initialized only when the connect_env function is called.
+            seed: seed for reproducibility
+            alpha: Learning rate for the Adam optimizer
+            epsilon: parameter for epsilon-greedy exploration
+            Vmin, Vmax, and N: parameters for the C51 distribution (see original paper)
+            loadWeights: Should the agent load previously saved weights?          
+        """
         super(C51Agent, self).__init__(seed=seed)
         self.Vmax = Vmax
         self.Vmin = Vmin
@@ -65,24 +85,82 @@ class C51Agent(Agent):
         
         
         self.rnd = random.Random(seed)
-        np.random.seed(self.rnd.randint(0, 10000))
-        tf.set_random_seed(self.rnd.randint(0, 10000))
         
         self.replay_memory = []
         self.learningSteps = 0
         
         
+        
     def connect_env(self,environment,agentIndex):
-        """Connects to the domain environment"""
+        """Connects to the domain environment
+             environment: HFO environment object
+             agentIndex: Agent index in the evnvironment
+        """
         super(C51Agent, self).connect_env(environment,agentIndex)
         self.environmentActions = environment.possible_actions()
         self.countReplayActions = np.zeros(len(self.environmentActions))
         self.build_network()
+        
         #self.update_target()
         if self.loadWeights:
             self.load_weights()
         
-    
+        
+    def build_layers(self,trainable):
+        """Creates a new Neural Network
+            trainable: defines if the network is trainable or not (as in the case of the target network)
+        """
+        featureSize = len(self.environment.get_state(self.agentIndex)[1])
+        n_act = len(self.environmentActions)  
+        #Input layer
+        #inputs =  keras.layers.Input(shape = (environment.N_INPUTS,))
+        inputs = tf.placeholder(tf.float32, [None,featureSize], name = 'Input')
+        y_net = [None] * n_act
+        befSoft = [None] * n_act
+        if self.useThreeNetworks:
+            for act in range(n_act):
+                #Hidden layers
+                #First hidden Layer
+                layerW = tf.Variable(tf.random_uniform([featureSize,self.n_neuronsHidden],seed = self.rnd.randint(0,1000), 
+                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name='W1')
+                layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b1')
+                hiddenL =  tf.add(tf.matmul(inputs,layerW),layerB)
+                hiddenL = tf.nn.sigmoid(hiddenL)
+                for i in range(1,self.n_hidden):
+                    layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.n_neuronsHidden],seed = self.rnd.randint(0,1000), 
+                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(i+1))
+                    layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(i+1))
+                    hiddenL =  tf.add(tf.matmul(hiddenL,layerW),layerB)
+                    hiddenL = tf.nn.relu(hiddenL)
+                #Last Layer, connection with the Actions
+                layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.N],seed = self.rnd.randint(0,1000), 
+                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(self.n_hidden+1))
+                layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(self.n_hidden+1))
+                befSoft[act] = tf.add(tf.matmul(hiddenL, layerW), layerB)
+                y_net[act] = tf.nn.softmax(befSoft[act])
+        else:
+            #Hidden layers
+            #First hidden Layer
+            layerW = tf.Variable(tf.random_uniform([featureSize,self.n_neuronsHidden],seed = self.rnd.randint(0,1000), 
+                                                       minval = 0.0001, maxval=0.1),trainable = trainable, name='W1')
+            layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b1')
+            hiddenL =  tf.add(tf.matmul(inputs,layerW),layerB)
+            hiddenL = tf.nn.sigmoid(hiddenL)
+            for i in range(1,self.n_hidden):
+                layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.n_neuronsHidden],seed = self.rnd.randint(0,1000), 
+                                                       minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(i+1))
+                layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(i+1))
+                hiddenL =  tf.add(tf.matmul(hiddenL,layerW),layerB)
+                hiddenL = tf.nn.relu(hiddenL)
+            #Last Layer, connection with the Actions
+            layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.N],seed = self.rnd.randint(0,1000), 
+                                                       minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(self.n_hidden+1))
+            layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(self.n_hidden+1))
+            for act in range(n_act):
+                befSoft[act] = tf.add(tf.matmul(hiddenL, layerW), layerB)
+                y_net[act] = tf.nn.softmax(befSoft[act])
+            
+        return inputs,y_net,befSoft
     def build_network(self):
         """
             Builds the network to be used by the C51 agent. The network architecture depends on the 
@@ -90,75 +168,45 @@ class C51Agent(Agent):
             each hidden layer) as well as on the number of possible actions in the environment.
             This function must be called after the agent has been connected to the environment,
         """
-        featureSize = len(self.environment.get_state(self.agentIndex)[1])
-        #Input layer
-        inputs =  keras.layers.Input(shape = (featureSize,))
-        #inputs = keras.layers.Input(shape=(environment.N_INPUTS,))
-        
-        net = keras.layers.Dense(self.n_neuronsHidden,activation='relu')(inputs)
-        
-        #Hidden layers
-        for i in range(self.n_hidden-1):
-            net = keras.layers.Dense(self.n_neuronsHidden, activation='relu')(net)
-        n_act = len(self.environmentActions) 
-        
-        
-        if self.useThreeNetworks:
-            self.network = []
-            self.targetNet = [] 
-        
-            actLayer = keras.layers.Dense(self.N, activation='softmax')(net)
+        n_act = len(self.environmentActions)
+
+        with tf.Graph().as_default() as g:
+            #Placeholder for correct predictions (training)
+            self.y = tf.placeholder(tf.float32, [None,self.N], name = "y")
             
-            network = keras.models.Model(inputs = inputs, outputs=actLayer)         
+            #Builds both trainable and target networks
+            self.inputs, self.y_hat,befSoft = self.build_layers(trainable = True)
+            self.inputs_target, self.y_hat_target,befSoft_target = self.build_layers(trainable = False)
             
-            for i in range(n_act):
-                self.network.append(keras.models.clone_model(model=network))
-                optimizer = keras.optimizers.Adam(lr = self.alpha)
-                self.network[i].compile(optimizer = optimizer,
-                          loss='categorical_crossentropy'
-                          )
-                self.targetNet.append(keras.models.clone_model(model=self.network[i]))
+            # builds the operation to update the target network
+            self.update_target_op = []
+            trainable_variables = tf.trainable_variables()
+            all_variables = tf.global_variables()
+            for i in range(0, len(trainable_variables)):
+                self.update_target_op.append(all_variables[len(trainable_variables) + i].assign(trainable_variables[i]))
                 
-                
-        else:            
-            actLayers = []   
-            
-            
+            #A categorical cross-entropy cost function and an optimizer are defined for each action
+            cost = [None] * n_act
+            self.optimizers = [None] * n_act
             for i in range(n_act):
-                actLayers.append(keras.layers.Dense(self.N, activation='softmax')(net))
-            
-            self.network = keras.models.Model(inputs = inputs, outputs=actLayers)
-            optimizer = keras.optimizers.Adam(lr = self.alpha)
-            self.network.compile(optimizer = optimizer,
-                          loss='categorical_crossentropy'
-                          )
-            self.targetNet = keras.models.clone_model(model=self.network)
-            #self.targetNet.predict(np.zeros((1,featureSize)))
-        
-       
-        
-        
+                #cost[i] = tf.reduce_mean( - tf.reduce_sum(self.y * tf.log(self.y_hat[i] +0.0000000001)))
+                cost[i] = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=befSoft[i],labels=self.y))
+                #cost[i] = tf.Print(cost[i], [cost[i]], "cost")
+                # add an optimizer
+                self.optimizers[i] = tf.train.AdamOptimizer(learning_rate=self.alpha).minimize(cost[i])
+            self.session = tf.Session(graph=g)
+            self.session.run(tf.global_variables_initializer())
+            self.saver = tf.train.Saver()
+        self.update_target()
+ 
     def update_target(self):
-        if self.useThreeNetworks:
-            for i in range(len(self.network)):
-                self.targetNet[i].set_weights(self.network[i].get_weights())
-        else:
-            self.targetNet.set_weights(self.network.get_weights())
+        """Updates the target network with the current network weights"""
+        self.session.run(self.update_target_op)
     
     
     def calc_z_i(self,i):
         return self.Vmin + i*self.deltaZ
-    def prob(self,i,state,action):
-        """
-            check here, how to extract from the NN the parametric model?
-        """
-        probs = self.network.predict(np.array(state))[0]
-        probs_act = probs[self.environmentActions.index(action)]
-        
-        #assert len(probs_act) == 20
-        #assert np.sum(probs_act) < 1.1 and np.sum(probs_act) > 0.9
-        
-        return probs_act[i]
+
     
     def delete_example(self):
         #Get the 
@@ -236,17 +284,14 @@ class C51Agent(Agent):
         states = np.array(states)
         #statesPrime = np.array(statesPrime)
         
-        next_acts = self.select_action(statesPrime, multipleOut=True, network=self.network) #use self.network
+        next_acts = self.select_action(statesPrime, multipleOut=True, useNetwork=True) #use self.network
         next_acts = [self.environmentActions.index(a) for a in next_acts]
         
-        z_prime = None
+        
         statesPrime = np.array([statep[1] for statep in statesPrime])
-        if self.useThreeNetworks:
-            z_prime = []
-            for target in self.targetNet:
-                z_prime.append(target.predict(statesPrime))
-        else:
-            z_prime = self.targetNet.predict(statesPrime)  #Use target network
+        z_prime = []
+        for targetNet in self.y_hat_target:
+            z_prime.append(targetNet.eval(session=self.session,feed_dict={self.inputs_target:statesPrime}))  #Use target network
         
         #Calculate projection (m)
         for i in range(size_batch):
@@ -267,41 +312,53 @@ class C51Agent(Agent):
                     m[actions[i]][i][int(m_u)] += z_prime[next_acts[i]][i][j] * (bj - m_l)
                     
         
-        if self.useThreeNetworks:
-            for i in range(len(self.network)):
-                indexes = np.array(actions) == i
-                statesNet = states[indexes]
-                if len(statesNet) > 0:
-                    self.network[i].fit(statesNet, m[i][indexes][:], batch_size=len(statesNet), verbose=0, epochs=2)
-        else:
-            self.network.fit(states, m, batch_size=size_batch, verbose=0)
+        for i in range(len(self.y_hat)):
+            indexes = np.array(actions) == i
+            statesNet = states[indexes]
+            if len(statesNet) > 0:
+                self.optimizers[i].run(session=self.session, feed_dict = {
+                                                              self.inputs : statesNet,
+                                                              self.y : m[i][indexes][:]            
+                                                                          })
+                
+                #self.network[i].fit(statesNet, m[i][indexes][:], batch_size=len(statesNet), verbose=0, epochs=2)
+        
+        
                       
         
         
         
   
 
-    def calc_Q(self,state,action,network=None):
-        prob_vec = self.get_distrib(state,action,network)
-        value = np.dot(self.z_vec, prob_vec)
-        return value
+    def calc_Q(self,state,action,useNetwork=True):
+        """Calculates the Q-value for a given state and action
+            useNetwork: If true, uses the trainable network, otherwise uses the
+                target network.
+        """
+        prob_vec = self.get_distrib(state,action,useNetwork)
+        value = np.dot(prob_vec,self.z_vec)#np.dot(self.z_vec, prob_vec)
+        return value[0]
     
-    def get_distrib(self,state,action,network=None):
-        if network is None:
-            network = self.network
-        act_idx = self.environmentActions.index(action)
-        distrib = None
-        if self.useThreeNetworks:
-            #print(str(len(state)) + " - " + str(np.array([state]).shape) + str(np.array([state]).dtype))
-            distrib = network[act_idx].predict(np.array([state]))
-            distrib = distrib[0]
+    def get_distrib(self,state,action,useNetwork=True):
+        """ Returns the distribution over possible returns for the current state and action"""
+        
+        if useNetwork:
+            inputs,y_hat = self.inputs, self.y_hat
         else:
-            distrib = network.predict(np.array([state]))
-            distrib = distrib[act_idx][0]
+            inputs,y_hat = self.inputs_target, self.y_hat_target
+            
+        act_idx = self.environmentActions.index(action)
+        
+        distrib = y_hat[act_idx].eval(session=self.session, feed_dict = {inputs : np.array([state])})
         
         return distrib #np.array([self.prob(i,state,action) for i in range(self.N)])
 
-    def select_action(self,states,multipleOut=False,network=None):
+    def select_action(self,states,multipleOut=False,useNetwork=False):
+        """Select the action for the current state, can also be used for multiple states if multipleOut == True
+            states: current state or list of states in which the agent should choose an action.
+            multipleOut: must be True if a list of states is given
+            useNetwork: True if the trainable network should be used, False if the target one should be
+        """
         return_act = []
         
         if self.exploring:
@@ -309,10 +366,7 @@ class C51Agent(Agent):
             
             if rV <= self.epsilon and not multipleOut:
                 return random.choice(self.environment.all_actions(states,self.agentIndex))
-                
-        if network is None:
-            network = self.targetNet
-        
+                        
         if isinstance(states,tuple):
             states = [states]
             
@@ -325,7 +379,7 @@ class C51Agent(Agent):
                 state = np.array(state[1])
                 
                 if self.useBoltzmann:
-                    act_vals = np.array([self.calc_Q(state,act,network) for act in possibleActions])
+                    act_vals = np.array([self.calc_Q(state,act,useNetwork) for act in possibleActions])
                     act_vals = act_vals - min(act_vals) + 0.00001 #Avoiding division by 0
                     sum_vals = sum(act_vals)
                     act_vals = act_vals / sum_vals
@@ -343,12 +397,13 @@ class C51Agent(Agent):
                     maxAct = None
                     for act in possibleActions:
                         #print(state)
-                        qV = self.calc_Q(state,act,network)
+                        qV = self.calc_Q(state,act,useNetwork)
                         if qV > maxV:
                             maxV = qV
                             maxAct = [act]
                         elif qV == maxV:
                             maxAct.append(act)
+                    
                     return_act.append(random.choice(maxAct))
         if not multipleOut:
             return return_act[0]
@@ -362,19 +417,13 @@ class C51Agent(Agent):
         fileFolder = "./agentFiles/C51/"
         if not os.path.exists(fileFolder):
             os.makedirs(fileFolder)
-        if self.useThreeNetworks:
-            for i in range(len(self.network)):
-                self.network[i].save_weights(fileFolder+"C51Model"+str(i)+".h5")
-        else:
-            self.network.save_weights(fileFolder+"C51Model.h5")           
+        
+        self.saver.save(self.session,fileFolder+"C51Model.ckpt")
+        self.session.close()
+                   
     def load_weights(self): 
         """Loads previously saved weight files"""
         fileFolder = "./agentFiles/C51/"
-        if self.useThreeNetworks:
-            for i in range(len(self.network)):
-                self.network[i].load_weights(fileFolder+"C51Model"+str(i)+".h5")
-        else:
-            self.network.load_weights(fileFolder+"C51Model.h5")  
-        self.update_target()   
+        self.saver.restore(self.session, fileFolder+"C51Model.ckpt")  
         
         

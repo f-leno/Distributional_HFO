@@ -33,9 +33,9 @@ for epi in range(episodes):
         graphB.update_graph(state,step,act)
         print(state)
         print("Q 11")
-        print(agent.calc_Q(state[1], 11,agent.targetNet))
+        print(agent.calc_Q(state[1], 11,False))
         print("Q 9")
-        print(agent.calc_Q(state[1], 9,agent.targetNet))
+        print(agent.calc_Q(state[1], 9,False))
             
     #graphB.build_graph(env.S1)
 
