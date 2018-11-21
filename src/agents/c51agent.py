@@ -57,7 +57,7 @@ class C51Agent(Agent):
     loadWeights = None
     
     useBoltzmann = False
-    useThreeNetworks = False
+    useThreeNetworks = True
     
     n_hidden = 5
     n_neuronsHidden = 50
@@ -162,7 +162,7 @@ class C51Agent(Agent):
                 #Last Layer, connection with the Actions
                 layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.N],seed = self.rnd.randint(0,1000), 
                                                            minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(self.n_hidden+1))
-                layerB = tf.Variable(tf.random_uniform([self.N,1], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(self.n_hidden+1))
+                layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(self.n_hidden+1))
 
                 befSoft[act] = tf.add(tf.matmul(hiddenL, layerW), layerB)
                 y_net[act] = tf.nn.softmax(befSoft[act])
@@ -199,8 +199,9 @@ class C51Agent(Agent):
             self.optimizers = [None] * n_act
             for i in range(n_act):
                 #cost[i] = tf.reduce_mean( - tf.reduce_sum(self.y * tf.log(self.y_hat[i] +0.0000000001)))
-                cost[i] = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=befSoft[i],labels=self.y))
+                #cost[i] = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=befSoft[i],labels=self.y))
                 #cost[i] = tf.Print(cost[i], [cost[i]], "cost")
+                cost[i] = self.categorical_crossentropy(target=self.y, output=self.y_hat[i])
                 # add an optimizer
                 self.optimizers[i] = tf.train.AdamOptimizer(learning_rate=self.alpha).minimize(cost[i])
             self.session = tf.Session(graph=g)
@@ -440,4 +441,42 @@ class C51Agent(Agent):
         fileFolder = "./agentFiles/C51/"
         self.saver.restore(self.session, fileFolder+"C51Model.ckpt")  
         
-        
+    def categorical_crossentropy(self,target, output, from_logits=False, axis=-1):
+        """Categorical crossentropy between an output tensor and a target tensor.
+        # Arguments
+            target: A tensor of the same shape as `output`.
+            output: A tensor resulting from a softmax
+                (unless `from_logits` is True, in which
+                case `output` is expected to be the logits).
+            from_logits: Boolean, whether `output` is the
+                result of a softmax, or is a tensor of logits.
+            axis: Int specifying the channels axis. `axis=-1`
+                corresponds to data format `channels_last`,
+                and `axis=1` corresponds to data format
+                `channels_first`.
+        # Returns
+            Output tensor.
+        # Raises
+            ValueError: if `axis` is neither -1 nor one of
+                the axes of `output`.
+        """
+        output_dimensions = list(range(len(output.get_shape())))
+        if axis != -1 and axis not in output_dimensions:
+            raise ValueError(
+                '{}{}{}'.format(
+                    'Unexpected channels axis {}. '.format(axis),
+                    'Expected to be -1 or one of the axes of `output`, ',
+                    'which has {} dimensions.'.format(len(output.get_shape()))))
+        # Note: tf.nn.softmax_cross_entropy_with_logits
+        # expects logits, Keras expects probabilities.
+        if not from_logits:
+            # scale preds so that the class probas of each sample sum to 1
+            output /= tf.reduce_sum(output, axis, True)
+            # manual computation of crossentropy
+            _epsilon = tf.convert_to_tensor(1e-7, output.dtype.base_dtype)
+            output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
+            return - tf.reduce_sum(target * tf.log(output), axis)
+        else:
+            return tf.nn.softmax_cross_entropy_with_logits(labels=target,
+                                                           logits=output)
+   
