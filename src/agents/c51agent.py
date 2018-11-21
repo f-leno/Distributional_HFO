@@ -162,7 +162,7 @@ class C51Agent(Agent):
                 #Last Layer, connection with the Actions
                 layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.N],seed = self.rnd.randint(0,1000), 
                                                            minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(self.n_hidden+1))
-                layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(self.n_hidden+1))
+                layerB = tf.Variable(tf.random_uniform([self.N,1], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(self.n_hidden+1))
 
                 befSoft[act] = tf.add(tf.matmul(hiddenL, layerW), layerB)
                 y_net[act] = tf.nn.softmax(befSoft[act])
@@ -199,7 +199,7 @@ class C51Agent(Agent):
             self.optimizers = [None] * n_act
             for i in range(n_act):
                 #cost[i] = tf.reduce_mean( - tf.reduce_sum(self.y * tf.log(self.y_hat[i] +0.0000000001)))
-                cost[i] = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=befSoft[i],labels=self.y))
+                cost[i] = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=befSoft[i],labels=self.y))
                 #cost[i] = tf.Print(cost[i], [cost[i]], "cost")
                 # add an optimizer
                 self.optimizers[i] = tf.train.AdamOptimizer(learning_rate=self.alpha).minimize(cost[i])
