@@ -57,7 +57,7 @@ class C51Agent(Agent):
     loadWeights = None
     
     useBoltzmann = False
-    useThreeNetworks = True
+    useThreeNetworks = False
     
     n_hidden = 5
     n_neuronsHidden = 50
@@ -157,11 +157,13 @@ class C51Agent(Agent):
                 layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(i+1))
                 hiddenL =  tf.add(tf.matmul(hiddenL,layerW),layerB)
                 hiddenL = tf.nn.relu(hiddenL)
-            #Last Layer, connection with the Actions
-            layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.N],seed = self.rnd.randint(0,1000), 
-                                                       minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(self.n_hidden+1))
-            layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(self.n_hidden+1))
+                
             for act in range(n_act):
+                #Last Layer, connection with the Actions
+                layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.N],seed = self.rnd.randint(0,1000), 
+                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(self.n_hidden+1))
+                layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(self.n_hidden+1))
+
                 befSoft[act] = tf.add(tf.matmul(hiddenL, layerW), layerB)
                 y_net[act] = tf.nn.softmax(befSoft[act])
             
