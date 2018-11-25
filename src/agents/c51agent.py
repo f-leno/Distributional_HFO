@@ -142,6 +142,7 @@ class C51Agent(Agent):
                                                            minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(self.n_hidden+1))
                 layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(self.n_hidden+1))
                 befSoft[act] = tf.add(tf.matmul(hiddenL, layerW), layerB)
+                befSoft[act] += tf.convert_to_tensor(1e-7)
                 y_net[act] = tf.nn.softmax(befSoft[act])
         else:
             #Hidden layers
@@ -195,15 +196,15 @@ class C51Agent(Agent):
 
                
             #A categorical cross-entropy cost function and an optimizer are defined for each action
-            cost = [None] * n_act
+            self.cost = [None] * n_act
             self.optimizers = [None] * n_act
             for i in range(n_act):
                 #cost[i] = tf.reduce_mean( - tf.reduce_sum(self.y * tf.log(self.y_hat[i] +0.0000000001)))
                 #cost[i] = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=befSoft[i],labels=self.y))
                 #cost[i] = tf.Print(cost[i], [cost[i]], "cost")
-                cost[i] = self.categorical_crossentropy(target=self.y, output=self.y_hat[i])
+                self.cost[i] = self.categorical_crossentropy(target=self.y, output=self.y_hat[i])
                 # add an optimizer
-                self.optimizers[i] = tf.train.AdamOptimizer(learning_rate=self.alpha).minimize(cost[i])
+                self.optimizers[i] = tf.train.AdamOptimizer(learning_rate=self.alpha).minimize(self.cost[i])
             self.session = tf.Session(graph=g)
             self.session.run(tf.global_variables_initializer())
             self.saver = tf.train.Saver()
@@ -325,7 +326,7 @@ class C51Agent(Agent):
                     m[actions[i]][i][int(m_l)] += z_prime[next_acts[i]][i][j] * (m_u - bj)
                     m[actions[i]][i][int(m_u)] += z_prime[next_acts[i]][i][j] * (bj - m_l)
                     
-        
+        cost_vals = []
         for i in range(len(self.y_hat)):
             indexes = np.array(actions) == i
             statesNet = states[indexes]
@@ -334,6 +335,11 @@ class C51Agent(Agent):
                                                               self.inputs : statesNet,
                                                               self.y : m[i][indexes][:]            
                                                                           })
+                cost_vals.append(self.session.run(self.cost[i], feed_dict={
+                                                              self.inputs : statesNet,
+                                                              self.y : m[i][indexes][:]            
+                                                                          }))
+        print("Costs: " + str(cost_vals) + " -  shape:" + str([cost.shape for cost in cost_vals]))
                 
                 #self.network[i].fit(statesNet, m[i][indexes][:], batch_size=len(statesNet), verbose=0, epochs=2)
         
@@ -418,6 +424,7 @@ class C51Agent(Agent):
                             maxAct = [act]
                         elif qV == maxV:
                             maxAct.append(act)
+                    #print(str(state) + str(possibleActions))
                     
                     return_act.append(random.choice(maxAct))
         if not multipleOut:
@@ -471,11 +478,11 @@ class C51Agent(Agent):
         # expects logits, Keras expects probabilities.
         if not from_logits:
             # scale preds so that the class probas of each sample sum to 1
-            output /= tf.reduce_sum(output, axis, True)
+            #output /= tf.reduce_sum(output, axis, True)
             # manual computation of crossentropy
             _epsilon = tf.convert_to_tensor(1e-7, output.dtype.base_dtype)
             output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
-            return - tf.reduce_sum(target * tf.log(output), axis)
+            return - tf.reduce_sum(tf.reduce_sum(target * tf.log(output), axis),axis)
         else:
             return tf.nn.softmax_cross_entropy_with_logits(labels=target,
                                                            logits=output)
