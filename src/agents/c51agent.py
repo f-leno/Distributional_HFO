@@ -482,7 +482,7 @@ class C51Agent(Agent):
             # manual computation of crossentropy
             _epsilon = tf.convert_to_tensor(1e-7, output.dtype.base_dtype)
             output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
-            return - tf.reduce_sum(tf.reduce_sum(target * tf.log(output), axis),axis)
+            return - tf.reduce_mean(tf.reduce_sum(target * tf.log(output), axis),axis)
         else:
             return tf.nn.softmax_cross_entropy_with_logits(labels=target,
                                                            logits=output)
