@@ -111,7 +111,7 @@ class C51Agent(Agent):
             self.load_weights()
         
         
-    def build_layers(self,trainable):
+    def build_layers(self,trainable,prefix):
         """Creates a new Neural Network
             trainable: defines if the network is trainable or not (as in the case of the target network)
         """
@@ -119,7 +119,7 @@ class C51Agent(Agent):
         n_act = len(self.environmentActions)  
         #Input layer
         #inputs =  keras.layers.Input(shape = (environment.N_INPUTS,))
-        inputs = tf.placeholder(tf.float32, [None,featureSize], name = 'Input')
+        inputs = tf.placeholder(tf.float32, [None,featureSize], name = prefix+'Input')
         y_net = [None] * n_act
         befSoft = [None] * n_act
         if self.useThreeNetworks:
@@ -127,43 +127,43 @@ class C51Agent(Agent):
                 #Hidden layers
                 #First hidden Layer
                 layerW = tf.Variable(tf.random_uniform([featureSize,self.n_neuronsHidden],seed = self.rnd.randint(0,1000), 
-                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name='W1')
-                layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b1')
+                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name = prefix+'W1/'+str(act))
+                layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name = prefix+'b1/'+str(act))
                 hiddenL =  tf.add(tf.matmul(inputs,layerW),layerB)
                 hiddenL = tf.nn.sigmoid(hiddenL)
                 for i in range(1,self.n_hidden):
                     layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.n_neuronsHidden],seed = self.rnd.randint(0,1000), 
-                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(i+1))
-                    layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(i+1))
+                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name = prefix+'W'+str(i+1)+'/'+str(act))
+                    layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name = prefix+'b'+str(i+1)+'/'+str(act))
                     hiddenL =  tf.add(tf.matmul(hiddenL,layerW),layerB)
                     hiddenL = tf.nn.relu(hiddenL)
                 #Last Layer, connection with the Actions
                 layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.N],seed = self.rnd.randint(0,1000), 
-                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(self.n_hidden+1))
-                layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(self.n_hidden+1))
+                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name = prefix+'W'+str(self.n_hidden+1)+'/'+str(act))
+                layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name = prefix+'b'+str(self.n_hidden+1)+'/'+str(act))
                 befSoft[act] = tf.add(tf.matmul(hiddenL, layerW), layerB)
-                befSoft[act] += tf.convert_to_tensor(1e-7)
+                #befSoft[act] += tf.convert_to_tensor(1e-15)
                 y_net[act] = tf.nn.softmax(befSoft[act])
         else:
             #Hidden layers
             #First hidden Layer
             layerW = tf.Variable(tf.random_uniform([featureSize,self.n_neuronsHidden],seed = self.rnd.randint(0,1000), 
-                                                       minval = 0.0001, maxval=0.1),trainable = trainable, name='W1')
-            layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b1')
+                                                       minval = 0.0001, maxval=0.1),trainable = trainable, name = prefix+'W1')
+            layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name = prefix+'b1')
             hiddenL =  tf.add(tf.matmul(inputs,layerW),layerB)
             hiddenL = tf.nn.sigmoid(hiddenL)
             for i in range(1,self.n_hidden):
                 layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.n_neuronsHidden],seed = self.rnd.randint(0,1000), 
-                                                       minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(i+1))
-                layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(i+1))
+                                                       minval = 0.0001, maxval=0.1),trainable = trainable, name = prefix+'W'+str(i+1))
+                layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name = prefix+'b'+str(i+1))
                 hiddenL =  tf.add(tf.matmul(hiddenL,layerW),layerB)
                 hiddenL = tf.nn.relu(hiddenL)
                 
             for act in range(n_act):
                 #Last Layer, connection with the Actions
                 layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.N],seed = self.rnd.randint(0,1000), 
-                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name='W'+str(self.n_hidden+1))
-                layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name='b'+str(self.n_hidden+1))
+                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name = prefix+'W'+str(self.n_hidden+1)+'/'+str(act))
+                layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name = prefix+'b'+str(self.n_hidden+1)+'/'+str(act))
 
                 befSoft[act] = tf.add(tf.matmul(hiddenL, layerW), layerB)
                 y_net[act] = tf.nn.softmax(befSoft[act])
@@ -183,8 +183,8 @@ class C51Agent(Agent):
             self.y = tf.placeholder(tf.float32, [None,self.N], name = "y")
             
             #Builds both trainable and target networks
-            self.inputs, self.y_hat,befSoft = self.build_layers(trainable = True)
-            self.inputs_target, self.y_hat_target,befSoft_target = self.build_layers(trainable = False)
+            self.inputs, self.y_hat,befSoft = self.build_layers(trainable = True, prefix = "net/")
+            self.inputs_target, self.y_hat_target,befSoft_target = self.build_layers(trainable = False, prefix = "target/")
             
 
             # builds the operation to update the target network
@@ -480,9 +480,9 @@ class C51Agent(Agent):
             # scale preds so that the class probas of each sample sum to 1
             #output /= tf.reduce_sum(output, axis, True)
             # manual computation of crossentropy
-            _epsilon = tf.convert_to_tensor(1e-7, output.dtype.base_dtype)
+            _epsilon = tf.convert_to_tensor(1e-15, output.dtype.base_dtype)
             output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
-            return - tf.reduce_mean(tf.reduce_sum(target * tf.log(output), axis),axis)
+            return tf.reduce_mean(-tf.reduce_sum(target * tf.log(output), axis),axis)
         else:
             return tf.nn.softmax_cross_entropy_with_logits(labels=target,
                                                            logits=output)
