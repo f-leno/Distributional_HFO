@@ -52,6 +52,7 @@ class C51Agent(Agent):
     
     learningInterval = 25
     updateTargetInterval = 100
+    learningEpochs = 1
     
     environmentActions = None
     loadWeights = None
@@ -126,21 +127,30 @@ class C51Agent(Agent):
             for act in range(n_act):
                 #Hidden layers
                 #First hidden Layer
-                layerW = tf.Variable(tf.random_uniform([featureSize,self.n_neuronsHidden],seed = self.rnd.randint(0,1000), 
-                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name = prefix+'W1/'+str(act))
-                layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name = prefix+'b1/'+str(act))
+                layerW = tf.get_variable(prefix+'W1/'+str(act), trainable = trainable,shape=(featureSize,self.n_neuronsHidden),
+                                         initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
+                                         #initializer=tf.random_uniform([featureSize,self.n_neuronsHidden],seed = self.rnd.randint(0,1000),minval = 0.0001, maxval=0.1))                
+                layerB = tf.get_variable(prefix+'b1/'+str(act), trainable = trainable,shape=(self.n_neuronsHidden),
+                                         initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
+                                         #initializer=tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)))
                 hiddenL =  tf.add(tf.matmul(inputs,layerW),layerB)
                 hiddenL = tf.nn.sigmoid(hiddenL)
                 for i in range(1,self.n_hidden):
-                    layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.n_neuronsHidden],seed = self.rnd.randint(0,1000), 
-                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name = prefix+'W'+str(i+1)+'/'+str(act))
-                    layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name = prefix+'b'+str(i+1)+'/'+str(act))
+                    layerW = tf.get_variable(prefix+'W'+str(i+1)+'/'+str(act),trainable = trainable, shape=(self.n_neuronsHidden,self.n_neuronsHidden),
+                                             initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
+                                         #initializer=tf.random_uniform([self.n_neuronsHidden,self.n_neuronsHidden],seed = self.rnd.randint(0,1000),minval = 0.0001, maxval=0.1)))
+                    layerB = tf.get_variable(prefix+'b'+str(i+1)+'/'+str(act), trainable = trainable, shape = (self.n_neuronsHidden),
+                                             initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
+                                        #initializer=tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)))
                     hiddenL =  tf.add(tf.matmul(hiddenL,layerW),layerB)
                     hiddenL = tf.nn.relu(hiddenL)
                 #Last Layer, connection with the Actions
-                layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.N],seed = self.rnd.randint(0,1000), 
-                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name = prefix+'W'+str(self.n_hidden+1)+'/'+str(act))
-                layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name = prefix+'b'+str(self.n_hidden+1)+'/'+str(act))
+                layerW = tf.get_variable(prefix+'W'+str(self.n_hidden+1)+'/'+str(act), trainable = trainable,shape=(self.n_neuronsHidden,self.N),
+                                         initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
+                                         #initializer=tf.random_uniform([self.n_neuronsHidden,self.N],seed = self.rnd.randint(0,1000),minval = 0.0001, maxval=0.1))
+                layerB = tf.get_variable(prefix+'b'+str(self.n_hidden+1)+'/'+str(act), trainable = trainable, shape=(self.N),
+                                         initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
+                                        #initializer=tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)))
                 befSoft[act] = tf.add(tf.matmul(hiddenL, layerW), layerB)
                 #befSoft[act] += tf.convert_to_tensor(1e-15)
                 y_net[act] = tf.nn.softmax(befSoft[act])
@@ -177,8 +187,10 @@ class C51Agent(Agent):
             This function must be called after the agent has been connected to the environment,
         """
         n_act = len(self.environmentActions)
+        
+        g = tf.Graph()
 
-        with tf.Graph().as_default() as g:
+        with g.as_default():
             #Placeholder for correct predictions (training)
             self.y = tf.placeholder(tf.float32, [None,self.N], name = "y")
             
@@ -192,6 +204,7 @@ class C51Agent(Agent):
             trainable_variables = tf.trainable_variables()
             all_variables = tf.global_variables()
             for i in range(0, len(trainable_variables)):
+                #print(trainable_variables[i].name + "->" +all_variables[len(trainable_variables) + i].name)
                 self.update_target_op.append(all_variables[len(trainable_variables) + i].assign(trainable_variables[i]))
 
                
@@ -208,12 +221,15 @@ class C51Agent(Agent):
             self.session = tf.Session(graph=g)
             self.session.run(tf.global_variables_initializer())
             self.saver = tf.train.Saver()
-        self.update_target()
+            self.update_target()
  
     def update_target(self):
 
         """Updates the target network with the current network weights"""
-        self.session.run(self.update_target_op)
+        g = self.session.graph
+
+        with g.as_default():
+            self.session.run(self.update_target_op)
 
     
     
@@ -268,11 +284,14 @@ class C51Agent(Agent):
             
             #with self.session.as_default():
             #    with self.graph.as_default():
-            if self.learningSteps % self.learningInterval == 0:
-                batch = self.get_mini_batch()#random.sample(self.replay_memory, min(self.miniBatchSize,len(self.replay_memory)))
-                self.train_network(batch)
-            if self.learningSteps % self.updateTargetInterval == 0:
-                self.update_target()
+            g = self.session.graph
+
+            with g.as_default():
+                if self.learningSteps % self.learningInterval == 0:
+                    batch = self.get_mini_batch()#random.sample(self.replay_memory, min(self.miniBatchSize,len(self.replay_memory)))
+                    self.train_network(batch)
+                if self.learningSteps % self.updateTargetInterval == 0:
+                    self.update_target()
                 
 
             
@@ -331,15 +350,16 @@ class C51Agent(Agent):
             indexes = np.array(actions) == i
             statesNet = states[indexes]
             if len(statesNet) > 0:
-                self.optimizers[i].run(session=self.session, feed_dict = {
-                                                              self.inputs : statesNet,
-                                                              self.y : m[i][indexes][:]            
-                                                                          })
-                cost_vals.append(self.session.run(self.cost[i], feed_dict={
-                                                              self.inputs : statesNet,
-                                                              self.y : m[i][indexes][:]            
-                                                                          }))
-        print("Costs: " + str(cost_vals) + " -  shape:" + str([cost.shape for cost in cost_vals]))
+                for y in range(self.learningEpochs):
+                    self.optimizers[i].run(session=self.session, feed_dict = {
+                                                                  self.inputs : statesNet,
+                                                                  self.y : m[i][indexes][:]            
+                                                                              })
+                #cost_vals.append(self.session.run(self.cost[i], feed_dict={
+                #                                              self.inputs : statesNet,
+                #                                              self.y : m[i][indexes][:]            
+                #                                                          }))
+        #print("Costs: " + str(cost_vals) + " -  shape:" + str([cost.shape for cost in cost_vals]))
                 
                 #self.network[i].fit(statesNet, m[i][indexes][:], batch_size=len(statesNet), verbose=0, epochs=2)
         
@@ -369,7 +389,10 @@ class C51Agent(Agent):
             
         act_idx = self.environmentActions.index(action)
         
-        distrib = y_hat[act_idx].eval(session=self.session, feed_dict = {inputs : np.array([state])})
+        g = self.session.graph
+        
+        with g.as_default():
+            distrib = y_hat[act_idx].eval(session=self.session, feed_dict = {inputs : np.array([state])})
         
         return distrib #np.array([self.prob(i,state,action) for i in range(self.N)])
 

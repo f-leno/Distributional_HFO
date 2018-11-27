@@ -81,7 +81,7 @@ class C51Agent(Agent):
         #self.update_target()
         if self.loadWeights:
             self.load_weights()
-        self.network[0].predict(np.zeros(1,len(self.environment.get_state(self.agentIndex)[1])))
+        
         
     
     def build_network(self):
