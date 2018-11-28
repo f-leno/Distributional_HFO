@@ -58,7 +58,7 @@ class C51Agent(Agent):
     loadWeights = None
     
     useBoltzmann = False
-    useThreeNetworks = True
+    useThreeNetworks = False
     
     n_hidden = 5
     n_neuronsHidden = 50
@@ -157,23 +157,32 @@ class C51Agent(Agent):
         else:
             #Hidden layers
             #First hidden Layer
-            layerW = tf.Variable(tf.random_uniform([featureSize,self.n_neuronsHidden],seed = self.rnd.randint(0,1000), 
-                                                       minval = 0.0001, maxval=0.1),trainable = trainable, name = prefix+'W1')
-            layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name = prefix+'b1')
+            layerW = tf.get_variable(prefix+'W1', trainable = trainable, shape=(featureSize,self.n_neuronsHidden),
+                                     initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
+                                    #tf.random_uniform([featureSize,self.n_neuronsHidden],seed = self.rnd.randint(0,1000),minval = 0.0001, maxval=0.1))
+            layerB = tf.get_variable(prefix+'b1',trainable = trainable, shape = (self.n_neuronsHidden),
+                                     initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
+                                     #tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)))
             hiddenL =  tf.add(tf.matmul(inputs,layerW),layerB)
             hiddenL = tf.nn.sigmoid(hiddenL)
             for i in range(1,self.n_hidden):
-                layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.n_neuronsHidden],seed = self.rnd.randint(0,1000), 
-                                                       minval = 0.0001, maxval=0.1),trainable = trainable, name = prefix+'W'+str(i+1))
-                layerB = tf.Variable(tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)),trainable = trainable, name = prefix+'b'+str(i+1))
+                layerW = tf.get_variable(prefix+'W'+str(i+1), trainable=trainable, shape=(self.n_neuronsHidden,self.n_neuronsHidden),
+                                         initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
+                                         #tf.random_uniform([self.n_neuronsHidden,self.n_neuronsHidden],seed = self.rnd.randint(0,1000),minval = 0.0001, maxval=0.1))
+                layerB = tf.get_variable(prefix+'b'+str(i+1), trainable=trainable, shape=(self.n_neuronsHidden),
+                                         initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
+                                         #tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)))
                 hiddenL =  tf.add(tf.matmul(hiddenL,layerW),layerB)
                 hiddenL = tf.nn.relu(hiddenL)
                 
             for act in range(n_act):
                 #Last Layer, connection with the Actions
-                layerW = tf.Variable(tf.random_uniform([self.n_neuronsHidden,self.N],seed = self.rnd.randint(0,1000), 
-                                                           minval = 0.0001, maxval=0.1),trainable = trainable, name = prefix+'W'+str(self.n_hidden+1)+'/'+str(act))
-                layerB = tf.Variable(tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)),trainable = trainable, name = prefix+'b'+str(self.n_hidden+1)+'/'+str(act))
+                layerW = tf.get_variable(prefix+'W'+str(self.n_hidden+1)+'/'+str(act), trainable=trainable, shape= (self.n_neuronsHidden,self.N),
+                                         initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
+                                         #tf.random_uniform([self.n_neuronsHidden,self.N],seed = self.rnd.randint(0,1000),minval = 0.0001, maxval=0.1))
+                layerB = tf.get_variable(prefix+'b'+str(self.n_hidden+1)+'/'+str(act), trainable=trainable, shape= (self.N), 
+                                         initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
+                                         #tf.random_uniform([self.N], seed = self.rnd.randint(0,1000)))
 
                 befSoft[act] = tf.add(tf.matmul(hiddenL, layerW), layerB)
                 y_net[act] = tf.nn.softmax(befSoft[act])
