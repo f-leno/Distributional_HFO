@@ -245,10 +245,11 @@ class C51Agent(Agent):
         delInd = next(x[0] for x in enumerate(self.replay_memory) if x[1][1] == self.environmentActions[maxInd])
         del self.replay_memory[delInd]
     def get_mini_batch(self):
+      
         #If an equal number of examples for each action can be chosen
         n_acts = len(self.environmentActions)
         expectedNumber = int(floor(min(self.miniBatchSize,len(self.replay_memory)) / n_acts))
-        actualNActions = np.zeros((n_acts,1))
+        actualNActions = np.zeros((n_acts))
         remainingExamples = 0
         for i in range(n_acts):
             if self.countReplayActions[i] < expectedNumber:
@@ -256,10 +257,10 @@ class C51Agent(Agent):
                 remainingExamples += expectedNumber - actualNActions[i]
             else:
                 actualNActions[i] = expectedNumber
-        while remainingExamples != 0:
+        while remainingExamples > 0:
             #Number of actions that still have remaining examples in the replay buffer
             n_remaining =  sum([1 for i in range(n_acts) if actualNActions[i] < self.countReplayActions[i]])
-            distribExamples = remainingExamples / n_remaining
+            distribExamples = ceil(remainingExamples / n_remaining)
             
             for i in range(n_acts):
                 if actualNActions[i] < self.countReplayActions[i]:
@@ -271,6 +272,7 @@ class C51Agent(Agent):
         for i in range(n_acts):
             sampAct = [x for x in self.replay_memory if x[1]==self.environmentActions[i]]
             batch.extend(random.sample(sampAct, int(actualNActions[i])))
+        
         return batch    
     
     def observe_reward(self,state,action,statePrime,reward):
@@ -462,14 +464,17 @@ class C51Agent(Agent):
         fileFolder = "./agentFiles/C51/"
         if not os.path.exists(fileFolder):
             os.makedirs(fileFolder)
+            
+        filePath = fileFolder+"C51Model" + str(self.agentIndex) + ".ckpt"
         
-        self.saver.save(self.session,fileFolder+"C51Model.ckpt")
+        self.saver.save(self.session,filePath)
         self.session.close()
                    
     def load_weights(self): 
         """Loads previously saved weight files"""
         fileFolder = "./agentFiles/C51/"
-        self.saver.restore(self.session, fileFolder+"C51Model.ckpt")  
+        filePath = fileFolder + "C51Model" + str(self.agentIndex) + ".ckpt"
+        self.saver.restore(self.session, filePath)  
         
     def categorical_crossentropy(self,target, output, from_logits=False, axis=-1):
         """Categorical crossentropy between an output tensor and a target tensor.
