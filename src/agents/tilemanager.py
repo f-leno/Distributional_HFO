@@ -20,7 +20,7 @@ class TileManager():
     def get_tiles(self,state):
         """Transform a state composed of a group of continous features to tiles"""
         #print(state)
-        tiledState = tiles.tiles(self.numtilings,self.memct,state)#[0]) #Comment [0]
+        tiledState = tiles.tiles(self.numtilings,self.memct,state[1])#[0]) #Comment [0]
         #tiledState.extend(tiles.tiles(self.numtilingsFriend,self.memctFriend,state[1])) #Comment Here
         #Converting to tuple makes the tile coding hashable
         return tuple(tiledState)

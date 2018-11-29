@@ -57,8 +57,8 @@ class C51Agent(Agent):
     environmentActions = None
     loadWeights = None
     
-    useBoltzmann = False
-    useThreeNetworks = False
+    useBoltzmann = True
+    useThreeNetworks = True
     
     n_hidden = 5
     n_neuronsHidden = 50
