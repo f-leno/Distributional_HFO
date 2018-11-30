@@ -57,7 +57,7 @@ class C51Agent(Agent):
     environmentActions = None
     loadWeights = None
     
-    useBoltzmann = True
+    useBoltzmann = False
     useThreeNetworks = True
     
     n_hidden = 5
@@ -227,7 +227,9 @@ class C51Agent(Agent):
                 self.cost[i] = self.categorical_crossentropy(target=self.y, output=self.y_hat[i])
                 # add an optimizer
                 self.optimizers[i] = tf.train.AdamOptimizer(learning_rate=self.alpha).minimize(self.cost[i])
-            self.session = tf.Session(graph=g)
+                
+            gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.2)
+            self.session = tf.Session(graph=g, config=tf.ConfigProto(gpu_options=gpu_options))
             self.session.run(tf.global_variables_initializer())
             self.saver = tf.train.Saver()
             self.update_target()
@@ -474,7 +476,10 @@ class C51Agent(Agent):
         if not os.path.exists(fileFolder):
             os.makedirs(fileFolder)
             
-        filePath = fileFolder+"C51Model" + str(self.agentIndex) + ".ckpt"
+        if self.environment.numberFriends == 0:
+            filePath = fileFolder + "C51Model.ckpt"
+        else:
+            filePath = fileFolder + "C51Model" + str(self.agentIndex) + ".ckpt"
         
         self.saver.save(self.session,filePath)
         self.session.close()
@@ -482,7 +487,10 @@ class C51Agent(Agent):
     def load_weights(self): 
         """Loads previously saved weight files"""
         fileFolder = "./agentFiles/C51/"
-        filePath = fileFolder + "C51Model" + str(self.agentIndex) + ".ckpt"
+        if self.environment.numberFriends == 0:
+            filePath = fileFolder + "C51Model.ckpt"
+        else:
+            filePath = fileFolder + "C51Model" + str(self.agentIndex) + ".ckpt"
         self.saver.restore(self.session, filePath)  
         
     def categorical_crossentropy(self,target, output, from_logits=False, axis=-1):

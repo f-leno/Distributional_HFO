@@ -11,6 +11,9 @@ class GraphBuilder():
     
     storedData = None
     delaySave = None
+    stacked = False
+    
+    
     colors = [(0.2588,0.4433,1.0),
               (1.0,0.5,0.62),
               (0.,0.,0.)
@@ -40,14 +43,19 @@ class GraphBuilder():
         actions = self.environment.all_actions(state,0)
         
         #graph, ax = plt.subplots()
-        
-        
-        sum_distrib = np.zeros((1,N))
         acc_probs = np.zeros((len(actions),N))
+        distribs = np.zeros((len(actions),N))
         for i in range(len(actions)):
-            distrib = self.agent.get_distrib(state[1],actions[i])
-            sum_distrib += distrib
-            acc_probs[i,:] = np.copy(sum_distrib)[:]
+            distribs[i,:] = self.agent.get_distrib(state[1],actions[i])
+        
+        if self.stacked or len(actions)==1:
+            sum_distrib = np.zeros((1,N))
+            for i in range(len(actions)):
+                distrib = distribs[i,:]
+                sum_distrib += distrib
+                acc_probs[i,:] = np.copy(sum_distrib)[:]
+        else:
+           acc_probs[:,:] = np.copy(distribs)[:,:]            
             
         print(step)
         data = [step, acc_probs, actions,action]
