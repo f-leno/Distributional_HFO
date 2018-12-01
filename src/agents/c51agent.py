@@ -135,6 +135,7 @@ class C51Agent(Agent):
                                          #initializer=tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)))
                 hiddenL =  tf.add(tf.matmul(inputs,layerW),layerB)
                 hiddenL = tf.nn.sigmoid(hiddenL)
+                #hiddenL = tf.nn.dropout(hiddenL, tf.constant(0.9), seed = self.rnd.randint(0,1000))
                 for i in range(1,self.n_hidden):
                     layerW = tf.get_variable(prefix+'W'+str(i+1)+'/'+str(act),trainable = trainable, shape=(self.n_neuronsHidden,self.n_neuronsHidden),
                                              initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
@@ -143,7 +144,7 @@ class C51Agent(Agent):
                                              initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
                                         #initializer=tf.random_uniform([self.n_neuronsHidden], seed = self.rnd.randint(0,1000)))
                     hiddenL =  tf.add(tf.matmul(hiddenL,layerW),layerB)
-                    hiddenL = tf.nn.relu(hiddenL)
+                    hiddenL = tf.nn.relu(hiddenL) 
                 #Last Layer, connection with the Actions
                 layerW = tf.get_variable(prefix+'W'+str(self.n_hidden+1)+'/'+str(act), trainable = trainable,shape=(self.n_neuronsHidden,self.N),
                                          initializer = tf.glorot_uniform_initializer(seed=self.rnd.randint(0,1000)))
@@ -228,7 +229,8 @@ class C51Agent(Agent):
                 # add an optimizer
                 self.optimizers[i] = tf.train.AdamOptimizer(learning_rate=self.alpha).minimize(self.cost[i])
                 
-            gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.2)
+            #gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.2)
+            gpu_options = tf.GPUOptions(allow_growth=True)
             self.session = tf.Session(graph=g, config=tf.ConfigProto(gpu_options=gpu_options))
             self.session.run(tf.global_variables_initializer())
             self.saver = tf.train.Saver()
