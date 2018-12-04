@@ -60,7 +60,7 @@ class C51Agent(Agent):
     useBoltzmann = False
     useThreeNetworks = True
     
-    n_hidden = 4
+    n_hidden = 3
     n_neuronsHidden = 25 #50
     
     def __init__(self,seed=12345,alpha=0.01, epsilon=0.1,Vmin = -1.5,Vmax = 1.5, N=51, loadWeights=False):

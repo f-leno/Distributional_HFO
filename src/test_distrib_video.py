@@ -9,10 +9,15 @@ number_agents = 1
 port = 12345
 environment = HFOEnvironment(numberLearning=number_agents,cooperative=0,
                     numberOpponents=1,port=port,limitFrames = 200)
-agent = C51Agent(environment,loadWeights = True)
-agent.connect_env(environment,0)
-graphB = GraphBuilder(agent,environment)
-agent.exploring = False
+
+agent = [None] * number_agents
+for i in range(number_agents):
+    agent[i] = C51Agent(environment,loadWeights = True)
+    agent[i].connect_env(environment,i)
+    agent[i].exploring = False
+
+graphB = GraphBuilder(agent[0],environment)
+
 
 episodes = 1
 intervalVideo = 5
@@ -24,7 +29,7 @@ for epi in range(episodes):
     environment.start_episode()   
     while not environment.is_terminal_state():
         state = environment.get_state()
-        act = agent.select_action(state)
+        act = agent[0].select_action(state)
         environment.act(act)
         statePrime,action,reward = environment.step()
         step+=1
@@ -33,9 +38,9 @@ for epi in range(episodes):
         graphB.update_graph(state,step,act)
         print(state)
         print("Q 11")
-        print(agent.calc_Q(state[1], 11,False))
+        print(agent[0].calc_Q(state[1], 11,False))
         print("Q 9")
-        print(agent.calc_Q(state[1], 9,False))
+        print(agent[0].calc_Q(state[1], 9,False))
             
     #graphB.build_graph(env.S1)
 
