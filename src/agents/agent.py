@@ -23,6 +23,7 @@ class Agent(object):
     seed = None
     training_steps_total = None
     agentIndex = None
+    allAgents = None
     
     
     gamma = 0.9#0.9  #Discount factor for comparing proposals
@@ -35,10 +36,11 @@ class Agent(object):
         
 
        
-    def connect_env(self,environment,agentIndex):
+    def connect_env(self,environment,agentIndex,allAgents):
         """Connects to the domain environment"""
         self.environment = environment
         self.agentIndex = agentIndex
+        self.allAgents = allAgents
         environment.connect_server(agentIndex)
         
 

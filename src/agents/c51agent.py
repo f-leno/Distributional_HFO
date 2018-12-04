@@ -92,12 +92,12 @@ class C51Agent(Agent):
         
         
         
-    def connect_env(self,environment,agentIndex):
+    def connect_env(self,environment,agentIndex,allAgents):
         """Connects to the domain environment
              environment: HFO environment object
              agentIndex: Agent index in the evnvironment
         """
-        super(C51Agent, self).connect_env(environment,agentIndex)
+        super(C51Agent, self).connect_env(environment,agentIndex,allAgents)
         self.environmentActions = environment.possible_actions()
         self.countReplayActions = np.zeros(len(self.environmentActions))
         #self.graph = tf.Graph()
@@ -257,6 +257,7 @@ class C51Agent(Agent):
         
         delInd = next(x[0] for x in enumerate(self.replay_memory) if x[1][1] == self.environmentActions[maxInd])
         del self.replay_memory[delInd]
+        return delInd
     def get_mini_batch(self):
       
         #If an equal number of examples for each action can be chosen
@@ -281,12 +282,13 @@ class C51Agent(Agent):
                     actualNActions[i] += usableEx
                     remainingExamples -= usableEx
         
-        batch = []
+        indexes = []
         for i in range(n_acts):
-            sampAct = [x for x in self.replay_memory if x[1]==self.environmentActions[i]]
-            batch.extend(random.sample(sampAct, int(actualNActions[i])))
+            sampAct = [x for x in range(len(self.replay_memory)) if self.replay_memory[x][1]==self.environmentActions[i]]
+            indexes.extend(random.sample(sampAct, int(actualNActions[i])))
+        batch = [self.replay_memory[x] for x in indexes]
         
-        return batch    
+        return batch,indexes    
     
     def observe_reward(self,state,action,statePrime,reward):
         if self.exploring:
@@ -303,7 +305,7 @@ class C51Agent(Agent):
 
             with g.as_default():
                 if self.learningSteps % self.learningInterval == 0:
-                    batch = self.get_mini_batch()#random.sample(self.replay_memory, min(self.miniBatchSize,len(self.replay_memory)))
+                    batch,_ = self.get_mini_batch()#random.sample(self.replay_memory, min(self.miniBatchSize,len(self.replay_memory)))
                     self.train_network(batch)
                 if self.learningSteps % self.updateTargetInterval == 0:
                     self.update_target()

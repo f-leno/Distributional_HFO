@@ -1,25 +1,29 @@
 from environment.hfoenvironment import HFOEnvironment
 from agents.c51agent import C51Agent
+from agents.c51syncagent import C51SyncAgent
 from graphs.graphs import GraphBuilder
 import matplotlib.pyplot as plt
 
-
+sync = True
 
 number_agents = 1
 port = 12345
-environment = HFOEnvironment(numberLearning=number_agents,cooperative=0,
+environment = HFOEnvironment(numberLearning=number_agents,cooperative=1,
                     numberOpponents=1,port=port,limitFrames = 200)
 
 agent = [None] * number_agents
 for i in range(number_agents):
-    agent[i] = C51Agent(environment,loadWeights = True)
-    agent[i].connect_env(environment,i)
+    if sync:
+        agent[i] = C51SyncAgent(environment,loadWeights = True)
+    else:
+        agent[i] = C51Agent(environment,loadWeights = True)
+    agent[i].connect_env(environment,i, [agent])
     agent[i].exploring = False
 
 graphB = GraphBuilder(agent[0],environment)
 
 
-episodes = 1
+episodes = 10
 intervalVideo = 5
 
 step = 0

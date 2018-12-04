@@ -147,7 +147,7 @@ def thread_agent(agentObj,allAgents,agentIndex,mainParameters):
     
     #Connecting agent to server 
     print("******Connecting agent "+str(agentIndex)+"****")
-    agentObj.connect_env(environment,agentIndex)
+    agentObj.connect_env(environment,agentIndex,allAgents)
     print(environment.get_unum(agentIndex))
     #Building Log folder name
     print("******Connected agent "+str(agentIndex)+"****")
