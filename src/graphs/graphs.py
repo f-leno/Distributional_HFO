@@ -13,13 +13,22 @@ class GraphBuilder():
     delaySave = None
     stacked = False
     
-    
+    act_names = { 8: "Move",
+                  9: "Shoot",
+                  11: "Dribble"
+                 }
     colors = [(0.2588,0.4433,1.0),
               (1.0,0.5,0.62),
-              (0.,0.,0.)
+              (0.,0.,0.),
+              (0.611, 0.392, 0.047),
+              (0.356, 0.172, 0.435) 
               ]
     
     window = None
+    
+    def name_act(self,action):
+        return self.act_names.get(action,"INVALID")
+        
     
     def __init__(self,agent,environment,delaySave=True):
         self.agent = agent
@@ -84,7 +93,11 @@ class GraphBuilder():
         self.graphData = [None]*len(actions)
         index = self.agent.z_vec
         for i in reversed(range(len(actions))):
-            self.graphData[i] = ax.bar(index,acc_probs[i],width,color=self.colors[i],label=str(actions[i]))
+            if self.stacked:
+                self.graphData[i] = ax.bar(index,acc_probs[i],width,color=self.colors[i],label=self.name_act(actions[i]))
+            else:
+                self.graphData[i] = ax.bar(index,acc_probs[i],width,color=self.colors[i],label=self.name_act(actions[i]))
+            
         ax.set_ylabel('Prob')
         ax.set_xlabel('V')
         #ax.set_xticklabels([str(int(x*self.agent.deltaZ)) for x in index])
