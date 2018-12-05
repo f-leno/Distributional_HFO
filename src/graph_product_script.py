@@ -19,7 +19,7 @@ environment = HFOEnvironment(numberLearning=number_agents,cooperative=0,
 agent = [None] * number_agents
 for i in range(number_agents):
     agent[i] = C51Agent(environment,loadWeights = True)
-    agent[i].connect_env(environment,i)
+    agent[i].connect_env(environment,i,agent)
     agent[i].exploring = False
 
 graphB = GraphBuilder(agent[0],environment)

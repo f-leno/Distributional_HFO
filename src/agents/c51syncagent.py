@@ -71,6 +71,27 @@ class C51SyncAgent(C51Agent):
             del self.replay_memory[index]
         return index
       
-
+    def finish_learning(self):
+        """Saves the weight after learning finishes"""
+        fileFolder = "./agentFiles/C51Sync/"
+        if not os.path.exists(fileFolder):
+            os.makedirs(fileFolder)
+            
+        if self.environment.numberFriends == 0:
+            filePath = fileFolder + "C51Model.ckpt"
+        else:
+            filePath = fileFolder + "C51Model" + str(self.agentIndex) + ".ckpt"
+        
+        self.saver.save(self.session,filePath)
+        self.session.close()
+                   
+    def load_weights(self): 
+        """Loads previously saved weight files"""
+        fileFolder = "./agentFiles/C51Sync/"
+        if self.environment.numberFriends == 0:
+            filePath = fileFolder + "C51Model.ckpt"
+        else:
+            filePath = fileFolder + "C51Model" + str(self.agentIndex) + ".ckpt"
+        self.saver.restore(self.session, filePath)  
     
  

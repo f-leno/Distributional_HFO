@@ -17,9 +17,9 @@ class GraphBuilder():
                   9: "Shoot",
                   11: "Dribble"
                  }
-    colors = [(0.2588,0.4433,1.0),
+    colors = [(0.,0.,0.),
               (1.0,0.5,0.62),
-              (0.,0.,0.),
+              (0.2588,0.4433,1.0),
               (0.611, 0.392, 0.047),
               (0.356, 0.172, 0.435) 
               ]
@@ -92,11 +92,12 @@ class GraphBuilder():
         
         self.graphData = [None]*len(actions)
         index = self.agent.z_vec
-        for i in reversed(range(len(actions))):
-            if self.stacked:
+        if self.stacked:
+            for i in reversed(range(len(actions))):
                 self.graphData[i] = ax.bar(index,acc_probs[i],width,color=self.colors[i],label=self.name_act(actions[i]))
-            else:
-                self.graphData[i] = ax.bar(index,acc_probs[i],width,color=self.colors[i],label=self.name_act(actions[i]))
+        else:
+            for i in range(len(actions)):
+                self.graphData[i] = ax.bar(index,acc_probs[i],width,color=self.colors[i],label=self.name_act(actions[i]),alpha=1.0 - (i*0.5))
             
         ax.set_ylabel('Prob')
         ax.set_xlabel('V')
