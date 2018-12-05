@@ -376,7 +376,7 @@ class C51Agent(Agent):
                 #                                              self.inputs : statesNet,
                 #                                              self.y : m[i][indexes][:]            
                 #                                                          }))
-        #print("Costs: " + str(cost_vals) + " -  shape:" + str([cost.shape for cost in cost_vals]))
+        #print("Costs: " + str(cost_vals) + " -  shape:" + str([cost.shape for cost in cost_vals]) + str(self.agentIndex))
                 
                 #self.network[i].fit(statesNet, m[i][indexes][:], batch_size=len(statesNet), verbose=0, epochs=2)
         

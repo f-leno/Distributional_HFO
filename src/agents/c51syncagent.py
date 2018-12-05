@@ -40,7 +40,7 @@ class C51SyncAgent(C51Agent):
             self.s_lockKey = 0
         else:
             while self.allAgents[agentTurn].s_lockKey is None:
-                print("waiting " + str(self.agentIndex)+ " - " + str(self.allAgents[agentTurn].s_lockKey))
+                #print("waiting " + str(self.agentIndex)+ " - " + str(self.allAgents[agentTurn].s_lockKey))
                 sleep(0.001)
                 #pass
             self.allAgents[agentTurn].s_lockKey += 1
@@ -60,8 +60,9 @@ class C51SyncAgent(C51Agent):
             self.d_lockKey = 0
         else:
             while self.allAgents[agentTurn].d_lockKey is None:
-                print("waiting " + str(self.agentIndex))
-                #pass
+                #print("waiting " + str(self.agentIndex))
+                sleep(0.001)
+                
             self.allAgents[agentTurn].d_lockKey += 1
             if self.allAgents[agentTurn].d_lockKey == len(self.allAgents)-1:
                 self.allAgents[agentTurn].d_lockKey = None
