@@ -285,7 +285,7 @@ class C51Agent(Agent):
         indexes = []
         for i in range(n_acts):
             sampAct = [x for x in range(len(self.replay_memory)) if self.replay_memory[x][1]==self.environmentActions[i]]
-            indexes.extend(random.sample(sampAct, int(actualNActions[i])))
+            indexes.extend(self.rnd.sample(sampAct, int(actualNActions[i])))
         batch = [self.replay_memory[x] for x in indexes]
         
         return batch,indexes    
@@ -305,7 +305,7 @@ class C51Agent(Agent):
 
             with g.as_default():
                 if self.learningSteps % self.learningInterval == 0:
-                    batch,_ = self.get_mini_batch()#random.sample(self.replay_memory, min(self.miniBatchSize,len(self.replay_memory)))
+                    batch,_ = self.get_mini_batch()#self.rnd.sample(self.replay_memory, min(self.miniBatchSize,len(self.replay_memory)))
                     self.train_network(batch)
                 if self.learningSteps % self.updateTargetInterval == 0:
                     self.update_target()
@@ -425,7 +425,7 @@ class C51Agent(Agent):
             rV = self.rnd.random()
             
             if rV <= self.epsilon and not multipleOut:
-                return random.choice(self.environment.all_actions(states,self.agentIndex))
+                return self.rnd.choice(self.environment.all_actions(states,self.agentIndex))
                         
         if isinstance(states,tuple):
             states = [states]
@@ -466,7 +466,7 @@ class C51Agent(Agent):
                             maxAct.append(act)
                     #print(str(state) + str(possibleActions))
                     
-                    return_act.append(random.choice(maxAct))
+                    return_act.append(self.rnd.choice(maxAct))
         if not multipleOut:
             return return_act[0]
         return return_act

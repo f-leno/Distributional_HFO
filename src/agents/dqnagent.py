@@ -29,6 +29,7 @@ class DQNAgent(Agent):
     
     #Training variables
     actions = None
+    rewards = None
     isTerminal = None
     
      
@@ -179,8 +180,9 @@ class DQNAgent(Agent):
             
             #actions executed
             self.actions = tf.placeholder('int64', [None], name='action_train')
+            self.rewards = tf.placeholder(tf.float32, [None], name='reward_train')
             #Actions suggested by
-            self.next_acts = tf.placeholder('int64', [None], name='action_train')   
+            self.next_acts = tf.placeholder('int64', [None], name='n_action_train')   
             self.isTerminal = tf.placeholder(tf.float32, [None], name='terminal_train')
             
             next_acts = tf.one_hot(self.next_acts, n_act, 1.0, 0.0, name='next_action_one_hot')
@@ -189,7 +191,7 @@ class DQNAgent(Agent):
             gamma = tf.convert_to_tensor(self.gamma)
             action_one_hot = tf.one_hot(self.actions, n_act, 1.0, 0.0, name='action_one_hot')
             q_acted = tf.reduce_sum(self.q * action_one_hot, reduction_indices=1, name='q_acted')
-            target_q_t = (tf.convert_to_tensor(1.0)-self.isTerminal)*gamma*target_max_q
+            target_q_t = self.rewards + (tf.convert_to_tensor(1.0)-self.isTerminal)*gamma*target_max_q
             
             delta = target_q_t - q_acted
                 #cost[i] = tf.Print(cost[i], [cost[i]], "cost")
@@ -256,7 +258,7 @@ class DQNAgent(Agent):
         indexes = []
         for i in range(n_acts):
             sampAct = [x for x in range(len(self.replay_memory)) if self.replay_memory[x][1]==self.environmentActions[i]]
-            indexes.extend(random.sample(sampAct, int(actualNActions[i])))
+            indexes.extend(self.rnd.sample(sampAct, int(actualNActions[i])))
         batch = [self.replay_memory[x] for x in indexes]
         
         return batch,indexes    
@@ -316,7 +318,7 @@ class DQNAgent(Agent):
         
         self.optimizer.run(session=self.session, feed_dict = {self.inputs : states, self.inputs_target : statesPrime,
                                                               self.actions: actions, self.next_acts : next_acts,
-                                                              self.isTerminal: terminal } )   
+                                                              self.isTerminal: terminal, self.rewards: rewards } )   
         
         
   
@@ -355,24 +357,34 @@ class DQNAgent(Agent):
             rV = self.rnd.random()
             
             if rV <= self.epsilon and not multipleOut:
-                return random.choice(self.environment.all_actions(states,self.agentIndex))
+                return self.rnd.choice(self.environment.all_actions(states,self.agentIndex))
                         
         if isinstance(states,tuple):
-            states = [states[1]]
+            states = [states]
         #print(states)
           
         #with self.session.as_default(): 
-        #    with self.graph.as_default():  
-        states = np.array(states)
+        #    with self.graph.as_default():
+        #print(states)
+        #print(len(states))
+        #Converting state to np array
+        convert_states = np.zeros((len(states),len(states[0][1])))
+        for i in range(len(states)):
+            convert_states[i,:] = states[i][1]  
+        
         if useNetwork:
             inputs,q_func = self.inputs,self.q
         else:
             inputs,q_func = self.inputs_target,self.q_target
-        allQ = q_func.eval(session=self.session, feed_dict={inputs : states })
+        
+        g = tf.Graph()
+
+        with g.as_default():
+            allQ = q_func.eval(session=self.session, feed_dict={inputs : convert_states })
         #Get the best action for each QTuple
-        i = 0
+        y = 0
         for qTuple in allQ:
-            possibleActions = self.environment.all_actions(states[i],self.agentIndex)    
+            possibleActions = self.environment.all_actions(states[y],self.agentIndex)    
         
             if len(possibleActions)==1:
                 return_act.append(possibleActions[0])
@@ -405,8 +417,8 @@ class DQNAgent(Agent):
                             maxAct.append(possibleActions[i])
                     #print(str(state) + str(possibleActions))
                     
-                    return_act.append(random.choice(maxAct))
-                i = i+1
+                    return_act.append(self.rnd.choice(maxAct))
+                y = y+1
         if not multipleOut:
             return return_act[0]
         return return_act
