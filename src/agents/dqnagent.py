@@ -193,7 +193,7 @@ class DQNAgent(Agent):
             
             delta = target_q_t - q_acted
                 #cost[i] = tf.Print(cost[i], [cost[i]], "cost")
-            self.cost = tf.reduce_mean(self.clipped_error(delta), name='loss')
+            self.cost = tf.reduce_mean(tf.square(delta), name='loss')#tf.reduce_mean(self.clipped_error(delta), name='loss')
                 # add an optimizer
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.alpha).minimize(self.cost)
                 
@@ -358,19 +358,29 @@ class DQNAgent(Agent):
                 return random.choice(self.environment.all_actions(states,self.agentIndex))
                         
         if isinstance(states,tuple):
-            states = [states]
+            states = [states[1]]
+        #print(states)
           
         #with self.session.as_default(): 
         #    with self.graph.as_default():  
-        for state in states:
-            possibleActions = self.environment.all_actions(state,self.agentIndex)
+        states = np.array(states)
+        if useNetwork:
+            inputs,q_func = self.inputs,self.q
+        else:
+            inputs,q_func = self.inputs_target,self.q_target
+        allQ = q_func.eval(session=self.session, feed_dict={inputs : states })
+        #Get the best action for each QTuple
+        i = 0
+        for qTuple in allQ:
+            possibleActions = self.environment.all_actions(states[i],self.agentIndex)    
+        
             if len(possibleActions)==1:
                 return_act.append(possibleActions[0])
             else:
-                state = np.array(state[1])
-                
+                act_idx = [self.environmentActions.index(x) for x in possibleActions]
+            
+                act_vals = qTuple[act_idx]
                 if self.useBoltzmann:
-                    act_vals = np.array([self.calc_Q(state,act,useNetwork) for act in possibleActions])
                     act_vals = act_vals - min(act_vals) + 0.00001 #Avoiding division by 0
                     sum_vals = sum(act_vals)
                     act_vals = act_vals / sum_vals
@@ -381,22 +391,22 @@ class DQNAgent(Agent):
                     while summedVal+act_vals[currentIndex] < rV:
                         summedVal += act_vals[currentIndex]
                         currentIndex += 1
-                    return_act.append(possibleActions[currentIndex])
-                    
+                    return_act.append(possibleActions[currentIndex])                   
                 else:
                     maxV = -float('inf')
                     maxAct = None
-                    for act in possibleActions:
+                    for i in range(len(possibleActions)):
                         #print(state)
-                        qV = self.calc_Q(state,act,useNetwork)
+                        qV = act_vals[i]
                         if qV > maxV:
                             maxV = qV
-                            maxAct = [act]
+                            maxAct = [possibleActions[i]]
                         elif qV == maxV:
-                            maxAct.append(act)
+                            maxAct.append(possibleActions[i])
                     #print(str(state) + str(possibleActions))
                     
                     return_act.append(random.choice(maxAct))
+                i = i+1
         if not multipleOut:
             return return_act[0]
         return return_act
