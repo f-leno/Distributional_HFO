@@ -317,9 +317,9 @@ class DQNAgent(Agent):
         
         statesPrime = np.array([statep[1] for statep in statesPrime])
         
-        print(self.session.run(self.cost, feed_dict = {self.inputs : states, self.inputs_target : statesPrime,
-                                                              self.actions: actions, self.next_acts : next_acts,
-                                                              self.isTerminal: terminal, self.rewards: rewards }))
+        #print(self.session.run(self.cost, feed_dict = {self.inputs : states, self.inputs_target : statesPrime,
+        #                                                      self.actions: actions, self.next_acts : next_acts,
+        #                                                      self.isTerminal: terminal, self.rewards: rewards }))
         
         self.optimizer.run(session=self.session, feed_dict = {self.inputs : states, self.inputs_target : statesPrime,
                                                               self.actions: actions, self.next_acts : next_acts,
