@@ -58,8 +58,8 @@ class DQNAgent(Agent):
     useBoltzmann = False
     
     
-    n_hidden = 3
-    n_neuronsHidden = 25 #50
+    n_hidden = 5
+    n_neuronsHidden = 50 #50
     
     def __init__(self,seed=12345,alpha=0.01, epsilon=0.1, loadWeights=False):
         """
@@ -195,7 +195,8 @@ class DQNAgent(Agent):
             
             delta = target_q_t - q_acted
                 #cost[i] = tf.Print(cost[i], [cost[i]], "cost")
-            self.cost = tf.reduce_mean(tf.square(delta), name='loss')#tf.reduce_mean(self.clipped_error(delta), name='loss')
+            #self.cost = tf.reduce_mean(tf.square(delta), name='loss')#tf.reduce_mean(self.clipped_error(delta), name='loss')
+            self.cost = tf.reduce_mean(self.clipped_error(delta), name='loss')
                 # add an optimizer
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.alpha).minimize(self.cost)
                 
