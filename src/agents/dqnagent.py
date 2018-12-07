@@ -58,8 +58,8 @@ class DQNAgent(Agent):
     useBoltzmann = False
     
     
-    n_hidden = 5
-    n_neuronsHidden = 50 #50
+    n_hidden = 3
+    n_neuronsHidden = 25 #50
     
     def __init__(self,seed=12345,alpha=0.01, epsilon=0.1, loadWeights=False):
         """
@@ -317,6 +317,10 @@ class DQNAgent(Agent):
         
         statesPrime = np.array([statep[1] for statep in statesPrime])
         
+        print(self.session.run(self.cost, feed_dict = {self.inputs : states, self.inputs_target : statesPrime,
+                                                              self.actions: actions, self.next_acts : next_acts,
+                                                              self.isTerminal: terminal, self.rewards: rewards }))
+        
         self.optimizer.run(session=self.session, feed_dict = {self.inputs : states, self.inputs_target : statesPrime,
                                                               self.actions: actions, self.next_acts : next_acts,
                                                               self.isTerminal: terminal, self.rewards: rewards } )   
@@ -346,7 +350,7 @@ class DQNAgent(Agent):
         return qs[0][act_idx] 
     
     
-    def select_action(self,states,multipleOut=False,useNetwork=False):
+    def select_action(self,states,multipleOut=False,useNetwork=True):
         """Select the action for the current state, can also be used for multiple states if multipleOut == True
             states: current state or list of states in which the agent should choose an action.
             multipleOut: must be True if a list of states is given
