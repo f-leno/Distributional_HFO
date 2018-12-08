@@ -1,3 +1,8 @@
+import random
+import numpy as np
+from agents.memory import PrioritizedReplayMemory
+from math import floor,ceil
+
 FIFO = 0
 BALANCED_ACTIONS = 1
 PRIORITIZED = 2
@@ -14,16 +19,59 @@ class BatchController():
         if type_batch not in [FIFO, BALANCED_ACTIONS, PRIORITIZED]:
             raise Exception("Unknown type of batch: " + str(type_batch))
         if type_batch == PRIORITIZED:
-            self.aux_obj = ReplayMemory()
+            params = {"mem_max_priority": 2.0,
+                      "rng": random.Random(agent.rnd.randint(0,1000)),
+                      "memory_size":agent.maxBatchSize,
+                      "prioritize_bias":0.
+                      }
+            self.aux_obj = PrioritizedReplayMemory(params=params)
+            agent.replay_memory = [None]*agent.maxBatchSize
+            
         
     def get_mini_batch(self):
         """Selects minibatch samples and return them"""
-        if type_batch == FIFO:
+        if self.type_batch == FIFO:
             return get_batch_fifo(self)
-        elif type_batch == BALANCED_ACTIONS:
-            return get_batch_balanced(self)
+        elif self.type_batch == BALANCED_ACTIONS:
+            return self.get_batch_balanced()
+        elif self.type_batch == PRIORITIZED:
+            return self.get_batch_prioritized()
             
+    def get_batch_prioritized(self):
+        index = self.aux_obj.get_minibatch_indices(min(self.aux_obj.current_size, self.agent.miniBatchSize))
+        batch = [self.agent.replay_memory[i] for i in index]
+        return batch,index
+    
+    def get_batch_balanced(self):
+        #If an equal number of examples for each action can be chosen
+        n_acts = len(self.agent.environmentActions)
+        expectedNumber = int(floor(min(self.agent.miniBatchSize,len(self.agent.replay_memory)) / n_acts))
+        actualNActions = np.zeros((n_acts))
+        remainingExamples = 0
+        for i in range(n_acts):
+            if self.agent.countReplayActions[i] < expectedNumber:
+                actualNActions[i] = self.agent.countReplayActions[i]
+                remainingExamples += expectedNumber - actualNActions[i]
+            else:
+                actualNActions[i] = expectedNumber
+        while remainingExamples > 0:
+            #Number of actions that still have remaining examples in the replay buffer
+            n_remaining =  sum([1 for i in range(n_acts) if actualNActions[i] < self.agent.countReplayActions[i]])
+            distribExamples = ceil(remainingExamples / n_remaining)
+            
+            for i in range(n_acts):
+                if actualNActions[i] < self.agent.countReplayActions[i]:
+                    usableEx = min(distribExamples, self.agent.countReplayActions[i] - actualNActions[i])
+                    actualNActions[i] += usableEx
+                    remainingExamples -= usableEx
         
+        indexes = []
+        for i in range(n_acts):
+            sampAct = [x for x in range(len(self.agent.replay_memory)) if self.agent.replay_memory[x][1]==self.agent.environmentActions[i]]
+            indexes.extend(self.agent.rnd.sample(sampAct, int(actualNActions[i])))
+        batch = [self.agent.replay_memory[x] for x in indexes]
+        
+        return batch,indexes 
 
     def delete_sample(self):
         """ Deletes one example from the bath, self is the agent"""
@@ -31,16 +79,28 @@ class BatchController():
             return delete_fifo(self.agent)
         elif self.type_batch == BALANCED_ACTIONS:
             return delete_balanced(self.agent)
+        
     
     
     def add_sample(self, sample):
-        if len(self.agent.replay_memory) >= self.agent.maxBatchSize:
-                self.delete_sample()#del self.replay_memory[0]
-        self.agent.replay_memory.append(sample)
-        
-        if self.type_batch == BALANCED_ACTIONS:
-            actI = self.agent.environmentActions.index(sample[1])
-            self.agent.countReplayActions[actI] += 1
+        if self.type_batch == PRIORITIZED:
+            self.agent.replay_memory[self.aux_obj.current_position] = sample
+            self.aux_obj.add()            
+        else:
+            if len(self.agent.replay_memory) >= self.agent.maxBatchSize:
+                    self.delete_sample()#del self.replay_memory[0]
+            self.agent.replay_memory.append(sample)
+            
+            if self.type_batch == BALANCED_ACTIONS:
+                actI = self.agent.environmentActions.index(sample[1])
+                self.agent.countReplayActions[actI] += 1
+    
+    def batch_update(self, args):
+        """If the batch selection method receives any value after update, it is computed here"""
+        if self.type_batch == PRIORITIZED:
+            indexes = args[0]
+            importance = args[1]
+            self.aux_obj.batch_update(indexes, importance)
         
 def delete_balanced(self):
     """Deletes one example from the batch and returns the index"""
@@ -65,35 +125,6 @@ def get_batch_fifo(self):
     return batch,indexes 
     
     
-def get_batch_balanced(self):
-    #If an equal number of examples for each action can be chosen
-    n_acts = len(self.environmentActions)
-    expectedNumber = int(floor(min(self.miniBatchSize,len(self.replay_memory)) / n_acts))
-    actualNActions = np.zeros((n_acts))
-    remainingExamples = 0
-    for i in range(n_acts):
-        if self.countReplayActions[i] < expectedNumber:
-            actualNActions[i] = self.countReplayActions[i]
-            remainingExamples += expectedNumber - actualNActions[i]
-        else:
-            actualNActions[i] = expectedNumber
-    while remainingExamples > 0:
-        #Number of actions that still have remaining examples in the replay buffer
-        n_remaining =  sum([1 for i in range(n_acts) if actualNActions[i] < self.countReplayActions[i]])
-        distribExamples = ceil(remainingExamples / n_remaining)
-        
-        for i in range(n_acts):
-            if actualNActions[i] < self.countReplayActions[i]:
-                usableEx = min(distribExamples, self.countReplayActions[i] - actualNActions[i])
-                actualNActions[i] += usableEx
-                remainingExamples -= usableEx
-    
-    indexes = []
-    for i in range(n_acts):
-        sampAct = [x for x in range(len(self.replay_memory)) if self.replay_memory[x][1]==self.environmentActions[i]]
-        indexes.extend(self.rnd.sample(sampAct, int(actualNActions[i])))
-    batch = [self.replay_memory[x] for x in indexes]
-    
-    return batch,indexes 
+
     
 

@@ -25,7 +25,7 @@ class DQNAgent(Agent):
     #Networks
     inputs, inputs_target = None,None
     soft_max, soft_max_target = None, None
-    q,q_target = None, None
+    q,q_target,q_acted = None, None, None
     q_best_act,q_best_act_target = None, None
     
     #Training variables
@@ -43,12 +43,15 @@ class DQNAgent(Agent):
     
     saver = None
     
+    batchController = None
+    
     replay_memory = None
     maxBatchSize = 10000
     miniBatchSize = 100
     learningSteps = None
     countReplayActions = None
-    batch_type = batch_util.FIFO
+    batch_type = batch_util.PRIORITIZED
+    lastIndexes = None #Indexes of the last batch selection
     
     learningInterval = 25
     updateTargetInterval = 100
@@ -82,8 +85,10 @@ class DQNAgent(Agent):
         
         
         self.rnd = random.Random(seed)
-        
         self.replay_memory = []
+        self.batchController = batch_util.BatchController(self,self.batch_type)
+        
+        
         self.learningSteps = 0
         
         
@@ -192,10 +197,10 @@ class DQNAgent(Agent):
             
             gamma = tf.convert_to_tensor(self.gamma)
             action_one_hot = tf.one_hot(self.actions, n_act, 1.0, 0.0, name='action_one_hot')
-            q_acted = tf.reduce_sum(self.q * action_one_hot, reduction_indices=1, name='q_acted')
+            self.q_acted = tf.reduce_sum(self.q * action_one_hot, reduction_indices=1, name='q_acted')
             target_q_t = self.rewards + (tf.convert_to_tensor(1.0)-self.isTerminal)*gamma*target_max_q
             
-            delta = target_q_t - q_acted
+            delta = target_q_t - self.q_acted
                 #cost[i] = tf.Print(cost[i], [cost[i]], "cost")
             #self.cost = tf.reduce_mean(tf.square(delta), name='loss')#tf.reduce_mean(self.clipped_error(delta), name='loss')
             self.cost = tf.reduce_mean(self.clipped_error(delta), name='loss')
@@ -228,18 +233,19 @@ class DQNAgent(Agent):
     
     def delete_example(self):
         #Get the 
-        return batch_util.delete_example(self,self.batch_type)
+        return self.batchController.delete_example()
     def get_mini_batch(self):
-        return batch_util.get_mini_batch(self,self.batch_type)
+        return self.batchController.get_mini_batch()
     
     def observe_reward(self,state,action,statePrime,reward):
         if self.exploring:
             self.learningSteps += 1
-            if len(self.replay_memory) >= self.maxBatchSize:
-                self.delete_example()#del self.replay_memory[0]
-            self.replay_memory.append([state,action,statePrime,reward,self.environment.is_terminal_state()])
-            actI = self.environmentActions.index(action)
-            self.countReplayActions[actI] += 1
+            #if len(self.replay_memory) >= self.maxBatchSize:
+            #    self.delete_example()#del self.replay_memory[0]
+            #self.replay_memory.append([state,action,statePrime,reward,self.environment.is_terminal_state()])
+            self.batchController.add_sample([state,action,statePrime,reward,self.environment.is_terminal_state()])
+            #actI = self.environmentActions.index(action)
+            #self.countReplayActions[actI] += 1
             
             #with self.session.as_default():
             #    with self.graph.as_default():
@@ -247,7 +253,7 @@ class DQNAgent(Agent):
 
             with g.as_default():
                 if self.learningSteps % self.learningInterval == 0:
-                    batch,_ = self.get_mini_batch()#random.sample(self.replay_memory, min(self.miniBatchSize,len(self.replay_memory)))
+                    batch,self.lastIndexes = self.get_mini_batch()#random.sample(self.replay_memory, min(self.miniBatchSize,len(self.replay_memory)))
                     self.train_network(batch)
                 if self.learningSteps % self.updateTargetInterval == 0:
                     self.update_target()
@@ -291,7 +297,12 @@ class DQNAgent(Agent):
         
         self.optimizer.run(session=self.session, feed_dict = {self.inputs : states, self.inputs_target : statesPrime,
                                                               self.actions: actions, self.next_acts : next_acts,
-                                                              self.isTerminal: terminal, self.rewards: rewards } )   
+                                                              self.isTerminal: terminal, self.rewards: rewards } )  
+        #For batch update
+        qValues = self.session.run(self.q_acted , feed_dict =  {self.inputs : states, self.actions:actions})
+        importance = np.absolute(rewards - qValues)
+        
+        self.batchController.batch_update([self.lastIndexes,importance]) 
         
         
   

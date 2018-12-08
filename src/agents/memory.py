@@ -96,8 +96,8 @@ class ReplayMemory(Memory):
 class PrioritizedReplayMemory(Memory):
     # def __init__(self, params, state_shape, action_shape):
     #     super(ProritizedReplayMemory, self).__init__(params, state_shape, action_shape)
-    def __init__(self, params, env):
-        super(PrioritizedReplayMemory, self).__init__(params, env)
+    def __init__(self, params):
+        super(PrioritizedReplayMemory, self).__init__(params)
         # Priorities are saved in a SumTree structure
         #      0        Parentnode of 1 and 2          --\
         #     / \                                         > max_size - 1 = 3

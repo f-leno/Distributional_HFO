@@ -45,6 +45,7 @@ class C51Agent(Agent):
     
     saver = None
     
+    batchController = None
     replay_memory = None
     maxBatchSize = 10000
     miniBatchSize = 100
@@ -88,8 +89,8 @@ class C51Agent(Agent):
         
         
         self.rnd = random.Random(seed)
-        
         self.replay_memory = []
+        self.batchController = batch_util.BatchController(self,self.batch_type)
         self.learningSteps = 0
         
         
@@ -253,18 +254,16 @@ class C51Agent(Agent):
 
     
     def delete_example(self):
-        return batch_util.delete_example(self,self.batch_type)
+        return self.batchController.delete_example()
     def get_mini_batch(self):
-        return batch_util.get_mini_batch(self,self.batch_type)
+        return self.batchController.get_mini_batch()
     
     def observe_reward(self,state,action,statePrime,reward):
         if self.exploring:
             self.learningSteps += 1
-            if len(self.replay_memory) >= self.maxBatchSize:
-                self.delete_example()#del self.replay_memory[0]
-            self.replay_memory.append([state,action,statePrime,reward,self.environment.is_terminal_state()])
-            actI = self.environmentActions.index(action)
-            self.countReplayActions[actI] += 1
+            self.batchController.add_sample([state,action,statePrime,reward,self.environment.is_terminal_state()])
+            #actI = self.environmentActions.index(action)
+            # self.countReplayActions[actI] += 1
             
             #with self.session.as_default():
             #    with self.graph.as_default():
@@ -272,7 +271,7 @@ class C51Agent(Agent):
 
             with g.as_default():
                 if self.learningSteps % self.learningInterval == 0:
-                    batch,_ = self.get_mini_batch()#self.rnd.sample(self.replay_memory, min(self.miniBatchSize,len(self.replay_memory)))
+                    batch,self.lastIndexes = self.get_mini_batch()#self.rnd.sample(self.replay_memory, min(self.miniBatchSize,len(self.replay_memory)))
                     self.train_network(batch)
                 if self.learningSteps % self.updateTargetInterval == 0:
                     self.update_target()
@@ -347,7 +346,14 @@ class C51Agent(Agent):
                 
                 #self.network[i].fit(statesNet, m[i][indexes][:], batch_size=len(statesNet), verbose=0, epochs=2)
         
-        
+        #For batch update
+        if self.batch_type == batch_util.PRIORITIZED:
+            importance = np.zeros((len(states)))
+            for i in range(len(states)):
+                q = self.calc_Q(states[i], actions[i], True)
+                importance[i] = np.absolute(rewards[i] - q)
+            
+            self.batchController.batch_update([self.lastIndexes,importance])
                       
         
         
