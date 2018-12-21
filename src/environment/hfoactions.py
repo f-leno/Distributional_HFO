@@ -7,7 +7,16 @@ Interface for HFO actions
 """
 import hfo
 passInterfaceInit = 20
+def get_shoot():
+    return hfo.SHOOT
+def get_dribble():
+    return hfo.DRIBBLE
 
+def is_shoot_action(action):
+    return action == hfo.SHOOT
+
+def is_dribble_action(action):
+    return action == hfo.DRIBBLE
 
 def is_pass_action(action):
     """Verifies if a given action is a PASS action. In practice, this can be 

@@ -51,7 +51,7 @@ class C51Agent(Agent):
     miniBatchSize = 100
     learningSteps = None
     countReplayActions = None
-    batch_type = batch_util.BALANCED_ACTIONS
+    batch_type = batch_util.PRIORITIZED
     
     learningInterval = 25
     updateTargetInterval = 100
@@ -348,6 +348,8 @@ class C51Agent(Agent):
         
         #For batch update
         if self.batch_type == batch_util.PRIORITIZED:
+            for i in range(len(actions)):
+                actions[i] = self.environmentActions[actions[i]]
             importance = np.zeros((len(states)))
             for i in range(len(states)):
                 q = self.calc_Q(states[i], actions[i], True)
