@@ -30,7 +30,7 @@ class C51ThresholdPolicy(C51Agent):
         
         
         
-      def select_action(self,states,multipleOut=False,useNetwork=False):
+    def select_action(self,states,multipleOut=False,useNetwork=False):
         """Select the action for the current state, can also be used for multiple states if multipleOut == True
             states: current state or list of states in which the agent should choose an action.
             multipleOut: must be True if a list of states is given
@@ -56,9 +56,9 @@ class C51ThresholdPolicy(C51Agent):
             else:
                 state = np.array(state[1])
                 
-                self.choose_act(state,possibleActions,useNetwork)
+                chosenAct=self.choose_act(state,possibleActions,useNetwork)
                     
-                    return_act.append(self.rnd.choice(maxAct))
+                return_act.append(chosenAct)
         if not multipleOut:
             return return_act[0]
         return return_act
@@ -76,7 +76,7 @@ class C51ThresholdPolicy(C51Agent):
         if action in possibleActions:
             #Get the probabilitys
             prob_vec = self.get_distrib(state,action,useNetwork)
-            prob_greater_zero = sum(prob_vec.extract(self.z_vec >= 0., prob_vec))
+            prob_greater_zero = sum(np.extract(self.z_vec >= 0., prob_vec))
 
             if prob_greater_zero > self.PROB_SHOOT:
                 return action
@@ -86,7 +86,7 @@ class C51ThresholdPolicy(C51Agent):
             if hfoactions.is_pass_action(act):
                  #Get the probabilitys
                 prob_vec = self.get_distrib(state,act,useNetwork)
-                prob_greater_zero = sum(prob_vec.extract(self.z_vec >= 0., prob_vec))
+                prob_greater_zero = sum(np.extract(self.z_vec >= 0., prob_vec))
 
                 if prob_greater_zero > self.PROB_PASS:
                     return act
