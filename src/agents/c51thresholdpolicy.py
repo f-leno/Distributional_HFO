@@ -27,7 +27,7 @@ class C51ThresholdPolicy(C51Agent):
             loadWeights: Should the agent load previously saved weights?          
         """
         super(C51ThresholdPolicy, self).__init__(seed=seed,alpha = alpha, epsilon = epsilon, Vmin = Vmin, Vmax = Vmax, N=N, loadWeights = loadWeights)
-        
+        self.className = "C51Threshold"
         
         
     def select_action(self,states,multipleOut=False,useNetwork=False):

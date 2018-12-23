@@ -66,6 +66,8 @@ class C51Agent(Agent):
     n_hidden = 3
     n_neuronsHidden = 25 #50
     
+    className = None
+    
     def __init__(self,seed=12345,alpha=0.01, epsilon=0.1,Vmin = -1.5,Vmax = 1.5, N=51, loadWeights=False):
         """
             Creates the C51 agent, initializing the main attributes.
@@ -92,6 +94,7 @@ class C51Agent(Agent):
         self.replay_memory = []
         self.batchController = batch_util.BatchController(self,self.batch_type)
         self.learningSteps = 0
+        self.className = "C51"
         
         
         
@@ -451,7 +454,7 @@ class C51Agent(Agent):
            
     def finish_learning(self):
         """Saves the weight after learning finishes"""
-        fileFolder = "./agentFiles/C51/"
+        fileFolder = "./agentFiles/" + self.className +"/"
         if not os.path.exists(fileFolder):
             os.makedirs(fileFolder)
             
@@ -465,7 +468,7 @@ class C51Agent(Agent):
                    
     def load_weights(self): 
         """Loads previously saved weight files"""
-        fileFolder = "./agentFiles/C51/"
+        fileFolder = "./agentFiles/" + self.className + "/"
         if self.environment.numberFriends == 0:
             filePath = fileFolder + "C51Model.ckpt"
         else:
