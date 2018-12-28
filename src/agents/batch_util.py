@@ -26,6 +26,8 @@ class BatchController():
                       }
             self.aux_obj = PrioritizedReplayMemory(params=params)
             agent.replay_memory = [None]*agent.maxBatchSize
+        else:
+            agent.replay_memory = []
             
         
     def get_mini_batch(self):
@@ -106,7 +108,7 @@ def delete_balanced(self):
     """Deletes one example from the batch and returns the index"""
     maxInd = np.argmax(self.countReplayActions)
     self.countReplayActions[maxInd] -= 1
-        
+   
     delInd = next(x[0] for x in enumerate(self.replay_memory) if x[1][1] == self.environmentActions[maxInd])
     del self.replay_memory[delInd]
     return delInd

@@ -10,10 +10,11 @@
 from agents.c51agent import C51Agent
 import numpy as np
 import environment.hfoactions as hfoactions
+import agents.batch_util as batch_util
 
 class C51ThresholdPolicy(C51Agent):
     
-    PROB_SHOOT = 0.5
+    PROB_SHOOT = 0.6#0.5
     PROB_PASS = 0.5
     
     def __init__(self,seed=12345,alpha=0.01, epsilon=0.1,Vmin = -1.5,Vmax = 1.5, N=51, loadWeights=False):
@@ -28,6 +29,9 @@ class C51ThresholdPolicy(C51Agent):
         """
         super(C51ThresholdPolicy, self).__init__(seed=seed,alpha = alpha, epsilon = epsilon, Vmin = Vmin, Vmax = Vmax, N=N, loadWeights = loadWeights)
         self.className = "C51Threshold"
+        #self.batch_type = batch_util.BALANCED_ACTIONS
+        
+        #self.batchController = batch_util.BatchController(self,self.batch_type)
         
         
     def select_action(self,states,multipleOut=False,useNetwork=False):
@@ -70,17 +74,19 @@ class C51ThresholdPolicy(C51Agent):
              Passes when PROB_PASS% of probability of receiving a return greater than 0
              DRIBBLE otherwise
         """
+     
 
         #if shooting is a feasible action
         action = hfoactions.get_shoot() 
-        if action in possibleActions:
-            #Get the probabilitys
-            prob_vec = self.get_distrib(state,action,useNetwork)
-            prob_greater_zero = sum(np.extract(self.z_vec >= 0., prob_vec))
+    
+        #Get the probabilitys
+        prob_vec = self.get_distrib(state,action,useNetwork)
+        prob_greater_zero = sum(np.extract(self.z_vec >= 0., prob_vec))
 
-            if prob_greater_zero > self.PROB_SHOOT:
-                return action
+        if prob_greater_zero > self.PROB_SHOOT:
+            return action
 
+    
         #Do the same for all pass actions
         for act in possibleActions:
             if hfoactions.is_pass_action(act):
@@ -90,6 +96,8 @@ class C51ThresholdPolicy(C51Agent):
 
                 if prob_greater_zero > self.PROB_PASS:
                     return act
+  
+            
 
         return hfoactions.get_dribble()
 
