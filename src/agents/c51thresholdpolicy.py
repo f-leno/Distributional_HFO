@@ -12,6 +12,7 @@ import numpy as np
 import environment.hfoactions as hfoactions
 import agents.batch_util as batch_util
 
+
 class C51ThresholdPolicy(C51Agent):
     
     PROB_SHOOT = 0.6#0.5
@@ -74,7 +75,7 @@ class C51ThresholdPolicy(C51Agent):
              Passes when PROB_PASS% of probability of receiving a return greater than 0
              DRIBBLE otherwise
         """
-     
+        evaluatePass = True
 
         #if shooting is a feasible action
         action = hfoactions.get_shoot() 
@@ -87,16 +88,35 @@ class C51ThresholdPolicy(C51Agent):
             return action
 
     
-        #Do the same for all pass actions
-        for act in possibleActions:
-            if hfoactions.is_pass_action(act):
-                 #Get the probabilitys
-                prob_vec = self.get_distrib(state,act,useNetwork)
-                prob_greater_zero = sum(np.extract(self.z_vec >= 0., prob_vec))
+        if evaluatePass:
+            #Do the same for all pass actions
+            for act in possibleActions:
+                if hfoactions.is_pass_action(act):
+                     #Get the probabilitys
+                    prob_vec = self.get_distrib(state,act,useNetwork)
+                    prob_greater_zero = sum(np.extract(self.z_vec >= 0., prob_vec))
+    
+                    if prob_greater_zero > self.PROB_PASS:
+                        return act
+        else:
+            action = hfoactions.get_dribble() 
 
-                if prob_greater_zero > self.PROB_PASS:
-                    return act
-  
+            #Get the probabilitiess
+            prob_vec = self.get_distrib(state,action,useNetwork)
+            prob_greater_zero = sum(np.extract(self.z_vec >= 0., prob_vec))
+    
+            if prob_greater_zero < self.PROB_PASS:
+                bestPassAction = None
+                bestVal = -float('inf')
+                for act in possibleActions:
+                    if hfoactions.is_pass_action(act):
+                        q = self.calc_Q(state,act)
+                        if q > bestVal:
+                            bestPassAction = act
+                            bestVal = q
+                if bestPassAction is not None:
+                    return bestPassAction
+                    
             
 
         return hfoactions.get_dribble()
