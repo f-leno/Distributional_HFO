@@ -15,7 +15,7 @@ import agents.batch_util as batch_util
 
 class C51ThresholdPolicy(C51Agent):
     
-    PROB_SHOOT = 0.6#0.5
+    PROB_SHOOT = 0.5#0.5
     PROB_PASS = 0.5
     
     def __init__(self,seed=12345,alpha=0.01, epsilon=0.1,Vmin = -1.5,Vmax = 1.5, N=51, loadWeights=False):
