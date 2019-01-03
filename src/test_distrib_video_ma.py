@@ -15,10 +15,11 @@ def thread_agent(agentClass,agentIndex,port,number_agents):
 
     agent = agentClass(environment,True) #Initiating agent   
     agent.connect_env(environment,agentIndex, [agent]*number_agents)
-    print("PORRA "+str(agentIndex))
-    agent.exploring = False     
+   
+    agent.exploring = False
+    recordVideo = agentIndex == 0 and False     
        
-    if agentIndex == 0:     
+    if recordVideo:     
         graphB = GraphBuilder(agent,environment)
 
 
@@ -39,7 +40,7 @@ def thread_agent(agentClass,agentIndex,port,number_agents):
             step+=1
             #if step % intervalVideo == 0 and len(environment.all_actions(statePrime,0)) > 1:
             #if len(environment.all_actions(statePrime,0)) > 1:
-            if agentIndex == 0:
+            if recordVideo:
                 graphB.update_graph(state,step,act)
                 print(state)
                 print("Q 11")
@@ -47,7 +48,7 @@ def thread_agent(agentClass,agentIndex,port,number_agents):
                 print("Q 9")
                 print(agent.calc_Q(state[1], 9,False))
     
-    if agentIndex == 0:
+    if recordVideo:
         graphB.finish()
 
 
