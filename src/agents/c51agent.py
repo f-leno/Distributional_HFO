@@ -283,7 +283,8 @@ class C51Agent(Agent):
                 
                 
 
-            
+    def finish_learning(self):
+        self.session.close()       
     def finish_episode(self):
         super(C51Agent, self).finish_episode()
         if self.training_episodes_total % self.saveWeightsInterval == 0:
@@ -485,7 +486,7 @@ class C51Agent(Agent):
             filePath = fileFolder + "C51Model" + str(self.agentIndex) + ".ckpt"
         
         self.saver.save(self.session,filePath)
-        self.session.close()
+        
         
     def categorical_crossentropy(self,target, output, from_logits=False, axis=-1):
         """Categorical crossentropy between an output tensor and a target tensor.
