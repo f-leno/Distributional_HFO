@@ -1,6 +1,7 @@
 from environment.hfoenvironment import HFOEnvironment
 from agents.c51agent import C51Agent
 from agents.c51syncagent import C51SyncAgent
+from agents.c51thresholdpolicy import C51ThresholdPolicy
 from graphs.graphs import GraphBuilder
 import matplotlib.pyplot as plt
 
@@ -14,7 +15,7 @@ environment = HFOEnvironment(numberLearning=number_agents,cooperative=1,
 agent = [None] * number_agents
 for i in range(number_agents):
     if sync:
-        agent[i] = C51SyncAgent(environment,loadWeights = True)
+        agent[i] = C51ThresholdPolicy(environment,loadWeights = True)
     else:
         agent[i] = C51Agent(environment,loadWeights = True)
     agent[i].connect_env(environment,i, [agent])
