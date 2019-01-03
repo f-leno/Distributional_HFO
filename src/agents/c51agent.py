@@ -15,6 +15,7 @@ from math import ceil,floor
 import tensorflow as tf
 import random
 from numpy import float64
+import errno
 
 import agents.batch_util as batch_util
 
@@ -472,8 +473,11 @@ class C51Agent(Agent):
     def save_weights(self,step):
         "Saves the weights when desired"
         fileFolder = "./agentFiles/" + self.className +"/" + str(step) + "/"
-        if not os.path.exists(fileFolder):
+        try:
             os.makedirs(fileFolder)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
             
         if self.environment.numberFriends == 0:
             filePath = fileFolder + "C51Model.ckpt"
