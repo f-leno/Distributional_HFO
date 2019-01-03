@@ -13,6 +13,7 @@ import tensorflow as tf
 import random
 from numpy import float64
 import agents.batch_util as batch_util
+import errno
 
 
 class DQNAgent(Agent):
@@ -66,7 +67,7 @@ class DQNAgent(Agent):
     n_hidden = 3
     n_neuronsHidden = 25 #50
     
-    def __init__(self,seed=12345,alpha=0.01, epsilon=0.1, loadWeights=False):
+    def __init__(self,seed=12345,saveWeightsInterval = 500,alpha=0.01, epsilon=0.1, loadWeights=False):
         """
             Creates the C51 agent, initializing the main attributes.
             Some attributes will be initialized only when the connect_env function is called.
@@ -76,7 +77,7 @@ class DQNAgent(Agent):
             Vmin, Vmax, and N: parameters for the C51 distribution (see original paper)
             loadWeights: Should the agent load previously saved weights?          
         """
-        super(DQNAgent, self).__init__(seed=seed)
+        super(DQNAgent, self).__init__(seed=seed,saveWeightsInterval = saveWeightsInterval)
 
         self.alpha = alpha
         self.epsilon = epsilon
@@ -257,6 +258,7 @@ class DQNAgent(Agent):
                     self.train_network(batch)
                 if self.learningSteps % self.updateTargetInterval == 0:
                     self.update_target()
+
                 
 
             
@@ -409,12 +411,24 @@ class DQNAgent(Agent):
     
     def get_used_budget(self):
         return 0.0
-           
+    
     def finish_learning(self):
+        self.session.close()
+        
+    def finish_episode(self):
+        super(DQNAgent, self).finish_episode()
+        if self.training_episodes_total % self.saveWeightsInterval == 0:
+            self.save_weights(self.training_episodes_total)
+           
+    def save_weights(self,step):
         """Saves the weight after learning finishes"""
-        fileFolder = "./agentFiles/DQN/"
-        if not os.path.exists(fileFolder):
+        fileFolder = "./agentFiles/DQN/" + str(step) + "/"
+        
+        try:
             os.makedirs(fileFolder)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
             
         if self.environment.numberFriends == 0:
             filePath = fileFolder + "DQNModel.ckpt"
@@ -422,11 +436,11 @@ class DQNAgent(Agent):
             filePath = fileFolder + "DQNModel" + str(self.agentIndex) + ".ckpt"
         
         self.saver.save(self.session,filePath)
-        self.session.close()
+        
                    
-    def load_weights(self): 
+    def load_weights(self,step): 
         """Loads previously saved weight files"""
-        fileFolder = "./agentFiles/DQN/"
+        fileFolder = "./agentFiles/DQN/" + str(step) + "/"
         if self.environment.numberFriends == 0:
             filePath = fileFolder + "DQNModel.ckpt"
         else:

@@ -23,7 +23,7 @@ def thread_agent(agentClass,agentIndex,port,number_agents):
         graphB = GraphBuilder(agent,environment)
 
 
-    episodes = 2
+    episodes = 10
     intervalVideo = 5
     
     step = 0

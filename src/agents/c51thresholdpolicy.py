@@ -18,7 +18,7 @@ class C51ThresholdPolicy(C51Agent):
     PROB_SHOOT = 0.5#0.5
     PROB_PASS = 0.5
     
-    def __init__(self,seed=12345,alpha=0.01, epsilon=0.1,Vmin = -1.5,Vmax = 1.5, N=51, loadWeights=False):
+    def __init__(self,seed=12345,saveWeightsInterval = 500,alpha=0.01, epsilon=0.1,Vmin = -1.5,Vmax = 1.5, N=51, loadWeights=False):
         """
             Creates the C51 agent, initializing the main attributes.
             Some attributes will be initialized only when the connect_env function is called.
@@ -28,7 +28,7 @@ class C51ThresholdPolicy(C51Agent):
             Vmin, Vmax, and N: parameters for the C51 distribution (see original paper)
             loadWeights: Should the agent load previously saved weights?          
         """
-        super(C51ThresholdPolicy, self).__init__(seed=seed,alpha = alpha, epsilon = epsilon, Vmin = Vmin, Vmax = Vmax, N=N, loadWeights = loadWeights)
+        super(C51ThresholdPolicy, self).__init__(seed=seed,alpha = alpha,saveWeightsInterval = saveWeightsInterval, epsilon = epsilon, Vmin = Vmin, Vmax = Vmax, N=N, loadWeights = loadWeights)
         self.className = "C51Threshold"
         #self.batch_type = batch_util.BALANCED_ACTIONS
         

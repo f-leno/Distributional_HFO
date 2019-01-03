@@ -22,18 +22,21 @@ class Agent(object):
     exploring = None
     seed = None
     training_steps_total = None
+    training_episodes_total = None
     agentIndex = None
     allAgents = None
+    saveWeightsInterval = None
     
     
     gamma = 0.9#0.9  #Discount factor for comparing proposals
     
-    def __init__(self, seed=12345):
+    def __init__(self, seed=12345, saveWeightsInterval = 500):
         """ Initializes an agent. """
         self.seed = seed
         self.exploring = True
         self.training_steps_total = 0
-        
+        self.training_episodes_total = 0
+        self.saveWeightsInterval = saveWeightsInterval
 
        
     def connect_env(self,environment,agentIndex,allAgents):
@@ -66,7 +69,8 @@ class Agent(object):
 
     def finish_episode(self):
         """ Informs the agent about the end of an episode """""
-        pass
+        if self.exploring:
+            self.training_episodes_total += 1
     def finish_learning(self):
         """End of one task"""
         pass

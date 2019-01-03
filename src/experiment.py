@@ -45,6 +45,7 @@ def get_args():
     parser.add_argument('-t','--learning_trials',type=int, default=10000)
     parser.add_argument('-i','--evaluation_interval',type=int, default=100)
     parser.add_argument('-d','--evaluation_duration',type=int, default=100)
+    parser.add_argument('-w','--save_interval',type=int, default=500)
     parser.add_argument('-s','--seed',type=int, default=12345)
     parser.add_argument('-l','--log_file',default='./log/')
     parser.add_argument('-p','--port',type=int, default=12345)
@@ -74,7 +75,7 @@ def build_agents():
            sys.exit(1)
     
         print("Creating agent")
-        AGENT = AgentClass(seed=parameter.seed+parameter.number_trial)
+        AGENT = AgentClass(seed=parameter.seed+parameter.number_trial,saveWeightsInterval = parameter.save_interval)
         print("OK Agent")
         agents.append(AGENT)
         

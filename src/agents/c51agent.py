@@ -67,8 +67,9 @@ class C51Agent(Agent):
     n_neuronsHidden = 25 #50
     
     className = None
+     
     
-    def __init__(self,seed=12345,alpha=0.01, epsilon=0.1,Vmin = -1.5,Vmax = 1.5, N=51, loadWeights=False):
+    def __init__(self,seed=12345,saveWeightsInterval = 500, alpha=0.01, epsilon=0.1,Vmin = -1.5,Vmax = 1.5, N=51, loadWeights=False):
         """
             Creates the C51 agent, initializing the main attributes.
             Some attributes will be initialized only when the connect_env function is called.
@@ -78,7 +79,7 @@ class C51Agent(Agent):
             Vmin, Vmax, and N: parameters for the C51 distribution (see original paper)
             loadWeights: Should the agent load previously saved weights?          
         """
-        super(C51Agent, self).__init__(seed=seed)
+        super(C51Agent, self).__init__(seed=seed,saveWeightsInterval = saveWeightsInterval)
         self.Vmax = Vmax
         self.Vmin = Vmin
         self.N = N
@@ -279,9 +280,14 @@ class C51Agent(Agent):
                 if self.learningSteps % self.updateTargetInterval == 0:
                     self.update_target()
                 
+                
 
             
-    
+    def finish_episode(self):
+        super(C51Agent, self).finish_episode()
+        if self.training_episodes_total % self.saveWeightsInterval == 0:
+            self.save_weights(self.training_episodes_total)
+            
     def train_network(self,batch):
         size_batch = len(batch)
         n_act = len(self.environmentActions)
@@ -452,9 +458,20 @@ class C51Agent(Agent):
     def get_used_budget(self):
         return 0.0
            
-    def finish_learning(self):
-        """Saves the weight after learning finishes"""
-        fileFolder = "./agentFiles/" + self.className +"/"
+        
+                   
+    def load_weights(self,step): 
+        """Loads previously saved weight files"""
+        fileFolder = "./agentFiles/" + self.className + "/" + str(step) + "/"
+        if self.environment.numberFriends == 0:
+            filePath = fileFolder + "C51Model.ckpt"
+        else:
+            filePath = fileFolder + "C51Model" + str(self.agentIndex) + ".ckpt"
+        self.saver.restore(self.session, filePath)  
+        
+    def save_weights(self,step):
+        "Saves the weights when desired"
+        fileFolder = "./agentFiles/" + self.className +"/" + str(step) + "/"
         if not os.path.exists(fileFolder):
             os.makedirs(fileFolder)
             
@@ -465,15 +482,6 @@ class C51Agent(Agent):
         
         self.saver.save(self.session,filePath)
         self.session.close()
-                   
-    def load_weights(self): 
-        """Loads previously saved weight files"""
-        fileFolder = "./agentFiles/" + self.className + "/"
-        if self.environment.numberFriends == 0:
-            filePath = fileFolder + "C51Model.ckpt"
-        else:
-            filePath = fileFolder + "C51Model" + str(self.agentIndex) + ".ckpt"
-        self.saver.restore(self.session, filePath)  
         
     def categorical_crossentropy(self,target, output, from_logits=False, axis=-1):
         """Categorical crossentropy between an output tensor and a target tensor.
