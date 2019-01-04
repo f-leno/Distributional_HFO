@@ -67,7 +67,7 @@ class DQNAgent(Agent):
     n_hidden = 3
     n_neuronsHidden = 25 #50
     
-    def __init__(self,seed=12345,saveWeightsInterval = 500,alpha=0.01, epsilon=0.1, loadWeights=False):
+    def __init__(self,seed=12345,saveWeightsInterval = 500,alpha=0.01, epsilon=0.1, loadWeights=False, loadStep = None):
         """
             Creates the C51 agent, initializing the main attributes.
             Some attributes will be initialized only when the connect_env function is called.
@@ -91,6 +91,7 @@ class DQNAgent(Agent):
         
         
         self.learningSteps = 0
+        self.loadStep = loadStep
         
         
         
@@ -111,7 +112,7 @@ class DQNAgent(Agent):
         self.update_target()
 
         if self.loadWeights:
-            self.load_weights()
+            self.load_weights(self.loadStep)
         
         
     def build_layers(self,trainable,prefix):

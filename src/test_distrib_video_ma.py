@@ -5,15 +5,26 @@ from agents.c51syncagent import C51SyncAgent
 from agents.c51thresholdpolicy import C51ThresholdPolicy
 from graphs.graphs import GraphBuilder
 import matplotlib.pyplot as plt
-from threading import Thread
+from threading import Thread,Condition
 from time import sleep
 
+loadStep = 10000
+if False:  #C51Threshold
+    agentClass = C51ThresholdPolicy
+elif False: #C51Average
+    agentClass = C51Agent
+elif True: #DQN
+    agentClass = DQNAgent
+    
+number_agents = 2
+interruptEnd = True
+port = 12345
 
 def thread_agent(agentClass,agentIndex,port,number_agents):
     environment =HFOEnvironment(numberLearning=number_agents,cooperative=0,
                     numberOpponents=2,port=port,limitFrames = 200)
 
-    agent = agentClass(environment,True) #Initiating agent   
+    agent = agentClass(loadWeights = True,loadStep = loadStep) #Initiating agent   
     agent.connect_env(environment,agentIndex, [agent]*number_agents)
    
     agent.exploring = False
@@ -23,7 +34,7 @@ def thread_agent(agentClass,agentIndex,port,number_agents):
         graphB = GraphBuilder(agent,environment)
 
 
-    episodes = 10
+    episodes = 20
     intervalVideo = 5
     
     step = 0
@@ -50,18 +61,12 @@ def thread_agent(agentClass,agentIndex,port,number_agents):
     
     if recordVideo:
         graphB.finish()
+        
+
+        
 
 
-if True:  #C51Threshold
-    agentClass = C51ThresholdPolicy
-elif False: #C51Average
-    agentClass = C51Agent
-elif False: #DQN
-    agentClass = DQNAgent
-    
-number_agents = 2
 
-port = 12345
 
 agentThreads = []
 #Initiating agent
@@ -77,7 +82,7 @@ for i in range(number_agents):
 
 
 
-            
+
 
 
 
