@@ -1,2 +1,0 @@
-model_checkpoint_path: "C51Model.ckpt"
-all_model_checkpoint_paths: "C51Model.ckpt"

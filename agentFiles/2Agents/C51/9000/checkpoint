@@ -1,0 +1,6 @@
+model_checkpoint_path: "C51Model1.ckpt"
+all_model_checkpoint_paths: "../7000/C51Model1.ckpt"
+all_model_checkpoint_paths: "../7500/C51Model1.ckpt"
+all_model_checkpoint_paths: "../8000/C51Model1.ckpt"
+all_model_checkpoint_paths: "../8500/C51Model1.ckpt"
+all_model_checkpoint_paths: "C51Model1.ckpt"

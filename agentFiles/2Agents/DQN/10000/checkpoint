@@ -1,0 +1,6 @@
+model_checkpoint_path: "DQNModel0.ckpt"
+all_model_checkpoint_paths: "../8000/DQNModel0.ckpt"
+all_model_checkpoint_paths: "../8500/DQNModel0.ckpt"
+all_model_checkpoint_paths: "../9000/DQNModel0.ckpt"
+all_model_checkpoint_paths: "../9500/DQNModel0.ckpt"
+all_model_checkpoint_paths: "DQNModel0.ckpt"
