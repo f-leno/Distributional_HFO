@@ -1,8 +1,6 @@
 """
-    Agent implementing the distributional RL algorithm C51, 
-    described in "A distributional Perspective on RL" by Marc Bellemare and others.
-    Some parts were based on the implementation available at:
-    https://github.com/flyyufelix/C51-DDQN-Keras/blob/master/networks.py
+    C51Threshold implementation. Almost all code inside c51agent.py is reused, except the codification for
+    deriving the policy from the distribution.
     
     @author: Leno    
 

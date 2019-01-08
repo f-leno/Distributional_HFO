@@ -1,4 +1,5 @@
 """
+    (C51Average agent)
     Agent implementing the distributional RL algorithm C51, 
     described in "A distributional Perspective on RL" by Marc Bellemare and others.
     Some parts were based on the implementation available at:
@@ -76,10 +77,12 @@ class C51Agent(Agent):
             Creates the C51 agent, initializing the main attributes.
             Some attributes will be initialized only when the connect_env function is called.
             seed: seed for reproducibility
+            saveWeightsInterval:  interval for checkpointing network weights
             alpha: Learning rate for the Adam optimizer
             epsilon: parameter for epsilon-greedy exploration
             Vmin, Vmax, and N: parameters for the C51 distribution (see original paper)
-            loadWeights: Should the agent load previously saved weights?          
+            loadWeights: Should the agent load previously saved weights?    
+            loadStep: Which checkpoint to choose from in case the agent is loading weights      
         """
         super(C51Agent, self).__init__(seed=seed,saveWeightsInterval = saveWeightsInterval)
         self.Vmax = Vmax
@@ -126,6 +129,8 @@ class C51Agent(Agent):
     def build_layers(self,trainable,prefix):
         """Creates a new Neural Network
             trainable: defines if the network is trainable or not (as in the case of the target network)
+            prefix: different networks should have different prefixes, to avoid issues because of multiple variables 
+                    with the same name
         """
         featureSize = len(self.environment.get_state(self.agentIndex)[1])
         n_act = len(self.environmentActions)  
@@ -267,6 +272,9 @@ class C51Agent(Agent):
         return self.batchController.get_mini_batch()
     
     def observe_reward(self,state,action,statePrime,reward):
+        """
+            Update function after receiving a reward from the environment
+        """
         if self.exploring:
             self.learningSteps += 1
             self.batchController.add_sample([state,action,statePrime,reward,self.environment.is_terminal_state()])
@@ -287,6 +295,9 @@ class C51Agent(Agent):
                 
 
     def finish_learning(self):
+        """
+            the TF session is closed when the training ends
+        """
         self.session.close()       
     def finish_episode(self):
         super(C51Agent, self).finish_episode()
@@ -294,6 +305,10 @@ class C51Agent(Agent):
             self.save_weights(self.training_episodes_total)
             
     def train_network(self,batch):
+        """
+            Network training function (see original paper).
+            This implementation could still be much optimized, it is functional but very slow.
+        """
         size_batch = len(batch)
         n_act = len(self.environmentActions)
         
@@ -490,7 +505,7 @@ class C51Agent(Agent):
         
         self.saver.save(self.session,filePath)
         
-        
+    #This function is similar to the one in the keras codebase  
     def categorical_crossentropy(self,target, output, from_logits=False, axis=-1):
         """Categorical crossentropy between an output tensor and a target tensor.
         # Arguments

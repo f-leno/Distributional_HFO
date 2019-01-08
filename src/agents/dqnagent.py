@@ -1,5 +1,5 @@
 """
-    DQN agent that uses the same experience replay as c51
+    DQN agent standard implementation.
     
     @author: Leno    
 

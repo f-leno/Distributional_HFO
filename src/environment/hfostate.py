@@ -3,6 +3,11 @@
 """
 Created on Wed Aug 16 16:00:06 2017
 Code to make it easier to deal with the state space in HFO
+
+filter_features defines which state variables are used.
+after all processing, the state will be a two-dimension tuple, the first one defining if the agent has the ball,
+and the second one will have a numpy vector with the attributes. 
+
 @author: Felipe Leno
 """
 import numpy as np

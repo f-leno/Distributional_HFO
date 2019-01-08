@@ -1,3 +1,9 @@
+"""
+    Codification for generating distribution graphs
+    author: Leno.
+
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.animation as manimation
@@ -16,21 +22,32 @@ class GraphBuilder():
     act_names = { 8: "Move",
                   9: "Shoot",
                   11: "Dribble"
-                 }
+                 } #Internal HFO codes for the actions
     colors = [(0.,0.,0.),
               (1.0,0.5,0.62),
               (0.2588,0.4433,1.0),
               (0.611, 0.392, 0.047),
               (0.356, 0.172, 0.435) 
-              ]
+              ] #Pre-specified colors for the graph
     
     window = None
     
     def name_act(self,action):
+        """
+            Returns the name for a given numeric action
+        """
         return self.act_names.get(action,"INVALID")
         
     
     def __init__(self,agent,environment,delaySave=True):
+        """
+            agent: C51 agent
+            environment: reference to a HFO environment object
+            delaySave: Should the agent store all data in memory and record the file after all
+                       episodes are executed? (the Robocup server sometimes presents exceptions if the agents
+                       take too long to perform actions, this bug has been posted in the HFO github but no one is
+                       currently maintaining it)
+        """
         self.agent = agent
         self.environment = environment
         graph, ax = plt.subplots()
@@ -48,6 +65,12 @@ class GraphBuilder():
         
     
     def update_graph(self,state,step=None,action=None):
+        """
+            Processes one step to have a graph generated. The image can be generated now or the step
+            might be stored in a buffer depending on the value of self.delaySave
+            state: State to generate the graph
+            step and action: optional info mostly used for debugging purposes
+        """
         N = self.agent.N
         actions = self.environment.all_actions(state,0)
         
@@ -74,6 +97,10 @@ class GraphBuilder():
             self.save_file(data)
             
     def save_file(self,data):
+        """
+            Generate the graph and save it on file.
+            data: data to generate the file from (distribution)
+        """
         step = data[0]
         acc_probs = data[1]
         actions = data[2]
@@ -118,6 +145,10 @@ class GraphBuilder():
         self.movieWriter.grab_frame()
         
     def finish(self):
+        """
+            if self.delaySave is true, the file is generated only after all evaluation episodes have been executed
+            after the file generation is over, the movie file is "closed"
+        """
         if self.delaySave:
             import time
             for data in self.storedData:

@@ -1,4 +1,4 @@
-"""Used to generate graphs for specific states"""
+"""Used to generate graphs for specific states in the paper """
 from environment.hfoenvironment import HFOEnvironment
 from agents.c51agent import C51Agent
 from graphs.graphs import GraphBuilder

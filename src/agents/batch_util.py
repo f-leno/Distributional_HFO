@@ -1,8 +1,20 @@
+"""
+    Functions to control experience replay batches storage and mini-batch selection
+    author: Leno.
+
+"""
+
+
 import random
 import numpy as np
 from agents.memory import PrioritizedReplayMemory
 from math import floor,ceil
 
+
+# 3 main strategies were implemented, FIFO simply keeps in memory the newest samples and selects
+# random ones for mini-batchs. BALANCED_ACTIONS tries to store the same number of samples for each action
+# and to select a balanced number of samples in the mini-batch. PRIORITIZED is the prioritized experience replay
+# implementation given by Ruben Glatt.
 FIFO = 0
 BALANCED_ACTIONS = 1
 PRIORITIZED = 2
@@ -13,12 +25,17 @@ class BatchController():
     aux_obj = None
     
     def __init__(self,agent,type_batch):
+        """
+            agent: reference to the agent object (the buffer is in the agent class)
+            type_batch: either FIFO, BALANCED_ACTIONS, or PRIORITIZED.
+        """
         self.agent = agent
         self.type_batch = type_batch
         
         if type_batch not in [FIFO, BALANCED_ACTIONS, PRIORITIZED]:
             raise Exception("Unknown type of batch: " + str(type_batch))
         if type_batch == PRIORITIZED:
+            #Interface for Ruben's implementation
             params = {"mem_max_priority": 2.0,
                       "rng": random.Random(agent.rnd.randint(0,1000)),
                       "memory_size":agent.maxBatchSize,

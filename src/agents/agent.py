@@ -31,7 +31,12 @@ class Agent(object):
     gamma = 0.9#0.9  #Discount factor for comparing proposals
     
     def __init__(self, seed=12345, saveWeightsInterval = 500):
-        """ Initializes an agent. """
+        """ Initializes an agent.
+         seed: used to facilitate reproducibility
+         saveWeightsInterval: Deep Learning agents will save their network weights periodically, this parameter
+                             specifies the interval.
+        
+         """
         self.seed = seed
         self.exploring = True
         self.training_steps_total = 0

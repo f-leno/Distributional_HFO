@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Authors: Felipe Leno, Ruben Glatt
+""" Authors: Felipe Leno, Ruben Glatt (in an older version)
 # THis program is the main loop of the experiment, the arguments will specify which type of agent will be executed in the HFO server,
 # all experiments were executed using this code with different parameters.
 #
-# Before running this program, first Start HFO server:
-# $> ./bin/HFO --offense-agents 1
+
+The codification here is able to start the robocup server and all needed agent processes in different threads (which
+is necessary due to HFO codification limitations but makes things a lot harder to debug). It is easier to initiate
+this script by using the .sh files included in this repository.
+
+
+The output will be .csv files in the log folder specified in the parameters.
+"""
 
 import argparse
 import sys
@@ -27,6 +33,22 @@ from statespace_util import *
 
 #Arguments
 def get_args():
+    """
+         --number_agents: number of learning agents to be initiated
+         --n_npcs: number of cooperative npc agents to be initiated 
+         --opponents: number of defensive (opponent) agents to be initiated
+         --agentX: Classes of each agent - example: C51ThresholdPolicy for C51Threshold
+         --learning_trials: number of learning steps before training is interrupted
+         --evaluation_interval: Interval for executing test trials
+         --evaluation_duration: number of episodes for each test trial
+         --save_interval: interval (in episodes) to have the agents saving their network weights
+         --seed: For reproducibility
+         --log_file: Folder to save the results
+         --port: port to initiate the HFO server
+         --number_trial: number of this trial (will affect the name of the output file and the seed)
+         --server_path: path to the HFO bin folder
+         
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('-n','--number_agents',type=int, default=1)
     parser.add_argument('-c','--n_npcs',type=int, default=0)
