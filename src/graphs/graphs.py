@@ -40,7 +40,7 @@ class GraphBuilder():
         
         
         
-        FFMpegWriter = manimation.writers['ffmpeg']
+        FFMpegWriter = manimation.writers['imagemagick']
         metadata = dict(title='Movie Test', artist='Distributional_HFO',
                 comment='')
         self.movieWriter = FFMpegWriter(fps=15, metadata=metadata)
@@ -88,7 +88,11 @@ class GraphBuilder():
         
         if self.graphData is not None:
              for bars in self.graphData:
-                 bars.remove() 
+                 #bars.remove()
+                 for i in range(len(bars)):
+                     lin = bars.pop(0)
+                     lin.remove()
+                     del lin 
         
         self.graphData = [None]*len(actions)
         index = self.agent.z_vec
@@ -97,17 +101,19 @@ class GraphBuilder():
                 self.graphData[i] = ax.bar(index,acc_probs[i],width,color=self.colors[i],label=self.name_act(actions[i]))
         else:
             for i in range(len(actions)):
-                self.graphData[i] = ax.bar(index,acc_probs[i],width,color=self.colors[i],label=self.name_act(actions[i]),alpha=1.0 - (i*0.5))
+                #self.graphData[i] = ax.bar(index,acc_probs[i],width,color=self.colors[i],label=self.name_act(actions[i]),alpha=1.0 - (i*0.5))
+                self.graphData[i] = ax.step(index,acc_probs[i],color=self.colors[i],label=self.name_act(actions[i]), linewidth=4)
             
         ax.set_ylabel('Prob')
-        ax.set_xlabel('V')
+        ax.set_xlabel('Return')
         #ax.set_xticklabels([str(int(x*self.agent.deltaZ)) for x in index])
         #ax.set_xticks([str(int(x)) for x in self.agent.z_vec])
-        ax.legend()
+        #ax.legend()
+        plt.legend()
         
         
-        if step is not None:
-            ax.set_title(str(step)+" - "+str(actionTaken))
+        #if step is not None:
+        #    ax.set_title(str(step)+" - "+str(actionTaken))
         #ax.set_xticks(index)
         self.movieWriter.grab_frame()
         
