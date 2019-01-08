@@ -60,6 +60,7 @@ class C51Agent(Agent):
     
     environmentActions = None
     loadWeights = None
+    loadStep = None
     
     useBoltzmann = False
     useThreeNetworks = True
@@ -70,7 +71,7 @@ class C51Agent(Agent):
     className = None
      
     
-    def __init__(self,seed=12345,saveWeightsInterval = 500, alpha=0.01, epsilon=0.1,Vmin = -1.5,Vmax = 1.5, N=51, loadWeights=False):
+    def __init__(self,seed=12345,saveWeightsInterval = 500, alpha=0.01, epsilon=0.1,Vmin = -1.5,Vmax = 1.5, N=51, loadWeights=False, loadStep = None):
         """
             Creates the C51 agent, initializing the main attributes.
             Some attributes will be initialized only when the connect_env function is called.
@@ -97,6 +98,7 @@ class C51Agent(Agent):
         self.batchController = batch_util.BatchController(self,self.batch_type)
         self.learningSteps = 0
         self.className = "C51"
+        self.loadStep = loadStep
         
         
         
@@ -117,7 +119,8 @@ class C51Agent(Agent):
         self.update_target()
 
         if self.loadWeights:
-            self.load_weights()
+            self.load_weights(self.loadStep)
+            print("Weights Loaded " + str(self.loadStep))
         
         
     def build_layers(self,trainable,prefix):
