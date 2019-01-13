@@ -9,11 +9,11 @@ from threading import Thread,Condition
 from time import sleep
 
 loadStep = 10000
-if False:  #C51Threshold
+if True:  #C51Threshold
     agentClass = C51ThresholdPolicy
 elif False: #C51Average
     agentClass = C51Agent
-elif True: #DQN
+elif False: #DQN
     agentClass = DQNAgent
     
 number_agents = 2

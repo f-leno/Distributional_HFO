@@ -129,15 +129,18 @@ class GraphBuilder():
         else:
             for i in range(len(actions)):
                 #self.graphData[i] = ax.bar(index,acc_probs[i],width,color=self.colors[i],label=self.name_act(actions[i]),alpha=1.0 - (i*0.5))
-                self.graphData[i] = ax.step(index,acc_probs[i],color=self.colors[i],label=self.name_act(actions[i]), linewidth=4)
+                self.graphData[i] = ax.step(index,acc_probs[i],color=self.colors[i],label=self.name_act(actions[i]), linewidth=10)
             
-        ax.set_ylabel('Prob')
-        ax.set_xlabel('Return')
+        ax.set_ylabel('Prob',  fontsize=42, fontweight='bold')
+        ax.set_xlabel('Return',fontsize=42, fontweight='bold')
+        plt.tick_params(axis='both', which='major', labelsize=40)
         #ax.set_xticklabels([str(int(x*self.agent.deltaZ)) for x in index])
         #ax.set_xticks([str(int(x)) for x in self.agent.z_vec])
         #ax.legend()
-        plt.legend()
-        
+        plt.legend(prop={'size':34, 'weight':'bold'})
+        figManager = plt.get_current_fig_manager()
+        figManager.window.showMaximized()
+        #plt.show()
         
         #if step is not None:
         #    ax.set_title(str(step)+" - "+str(actionTaken))

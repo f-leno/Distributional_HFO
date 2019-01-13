@@ -274,7 +274,7 @@ def draw_graph(source1 = None, name1 = "Algo1", significant1=None,
         if(not significant1 is None):
            plt.plot(X1,Y11,label=name1, color='#7570b3', linewidth=lineWidth,markevery=significant1,marker="d",markersize=8)
         else:
-            plt.plot(X1,Y11,label=name1, color='#7570b3', linewidth=lineWidth)
+            plt.plot(X1,Y11,label=name1, color='#e6ab02', linewidth=lineWidth,marker="d",markersize=18, markevery=5)
         if not yMin is None:
             plt.ylim([yMin,yMax])
         if not xMin is None:
@@ -290,7 +290,7 @@ def draw_graph(source1 = None, name1 = "Algo1", significant1=None,
         if(not significant2 is None):
             plt.plot(X2,Y21,label=name2, color='#e7298a', linewidth=lineWidth,markevery=significant2,marker="+",markersize=8)
         else:
-            plt.plot(X2,Y21,label=name2, color='#e7298a', linewidth=lineWidth)
+            plt.plot(X2,Y21,label=name2, color='#e7298a', linewidth=lineWidth,markevery=5,marker="+",markersize=18)
         if not yMin is None:
             plt.ylim([yMin,yMax])
         if not xMin is None:
@@ -306,7 +306,7 @@ def draw_graph(source1 = None, name1 = "Algo1", significant1=None,
         if(not significant3 is None):
             plt.plot(X3,Y31,label=name3, color='#66a61e', linewidth=lineWidth,marker="o",markevery=significant3,markersize=8)
         else:
-            plt.plot(X3,Y31,label=name3, color='#66a61e', linewidth=lineWidth)
+            plt.plot(X3,Y31,label=name3, color='#66a61e', linewidth=lineWidth,marker="o",markevery=5,markersize=18)
         if not yMin is None:
             plt.ylim([yMin,yMax])
         if not xMin is None:
@@ -322,7 +322,7 @@ def draw_graph(source1 = None, name1 = "Algo1", significant1=None,
         if(not significant4 is None):
             plt.plot(X4,Y41,label=name4, color='#e6ab02', linewidth=lineWidth,markevery=significant4,marker="H",markersize=8)
         else:
-            plt.plot(X4,Y41,label=name4, color='#e6ab02', linewidth=lineWidth)
+            plt.plot(X4,Y41,label=name4, color='#7570b3', linewidth=lineWidth,markevery=5,marker="H",markersize=18)
         if not yMin is None:
             plt.ylim([yMin,yMax])
         if not xMin is None:
@@ -338,7 +338,7 @@ def draw_graph(source1 = None, name1 = "Algo1", significant1=None,
         if(not significant5 is None):
             plt.plot(X5,Y51,label=name5, color='black', linewidth=lineWidth,markevery=significant5,marker="x",markersize=8)
         else:
-            plt.plot(X5,Y51,label=name5, color='black', linewidth=lineWidth)
+            plt.plot(X5,Y51,label=name5, color='black', linewidth=lineWidth,markevery=5,marker="x",markersize=18)
         if not yMin is None:
             plt.ylim([yMin,yMax])
         if not xMin is None:
