@@ -7,6 +7,7 @@ from graphs.graphs import GraphBuilder
 import matplotlib.pyplot as plt
 from threading import Thread,Condition
 from time import sleep
+import numpy as np
 
 loadStep = 10000
 if True:  #C51Threshold
@@ -20,6 +21,10 @@ number_agents = 2
 interruptEnd = True
 port = 12345
 
+def entropy(distrib):
+    ent = - np.sum(distrib * np.log(distrib))
+    return ent
+
 def thread_agent(agentClass,agentIndex,port,number_agents):
     environment =HFOEnvironment(numberLearning=number_agents,cooperative=0,
                     numberOpponents=2,port=port,limitFrames = 200)
@@ -28,11 +33,14 @@ def thread_agent(agentClass,agentIndex,port,number_agents):
     agent.connect_env(environment,agentIndex, [agent]*number_agents)
    
     agent.exploring = False
-    recordVideo = agentIndex == 0 and False     
+    recordVideo = agentIndex == 0 and False
+    printEntropy = agentIndex == 0 and True
+
        
     if recordVideo:     
         graphB = GraphBuilder(agent,environment)
 
+    entropVals = []
 
     episodes = 20
     intervalVideo = 5
@@ -58,10 +66,15 @@ def thread_agent(agentClass,agentIndex,port,number_agents):
                 print(agent.calc_Q(state[1], 11,False))
                 print("Q 9")
                 print(agent.calc_Q(state[1], 9,False))
+            if printEntropy:
+                entrop = entropy(agent.get_distrib(state[1],act,True))
+                entropVals.append(entrop)
+                #print("Entropy for State: " + str(entrop))
     
     if recordVideo:
         graphB.finish()
-        
+    if printEntropy:
+        print("Average Entropy: " + str(np.nanmean(np.array(entropVals))))   
 
         
 
